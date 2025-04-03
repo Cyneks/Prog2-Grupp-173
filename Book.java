@@ -20,7 +20,7 @@ public class Book extends Item implements PriceableWithVAT6 {
     }
 
     public double getPrice() {
-        double finalPrice = isBound() == true ? price * 1.3 : price; //Indbunda böcker 30% dyrare
+        double finalPrice = isBound() ? price * 1.3 : price; //Indbunda böcker 30% dyrare
         return finalPrice; //Tog bort *1.06 då metoden getPriceWithVAT() sköter det istället - Mattias
     }
 
