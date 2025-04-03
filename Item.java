@@ -1,7 +1,7 @@
 public abstract class Item implements Priceable {
     private final String name;
 
-    private Item(String name) {
+    protected Item(String name) {
         this.name = name;
     }
 
