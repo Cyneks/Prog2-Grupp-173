@@ -24,6 +24,10 @@ public class Recording {
     return false;
 	}
 
+  public int hashCode() {
+    return this.getYear() + this.getArtist().hashCode() + this.getTitle().hashCode();
+  }
+
   public String getArtist() {
     return artist;
   }
