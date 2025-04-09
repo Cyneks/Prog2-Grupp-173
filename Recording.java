@@ -2,7 +2,7 @@ import java.util.Collection;
 import java.util.Objects;
 import java.util.Set;
 
-public class Recording {
+public class Recording implements Comparable<Recording> {
   private final int year;
   private final String artist;
   private final String title;
@@ -19,7 +19,7 @@ public class Recording {
 
   public boolean equals(Object obj) {
     if (obj instanceof Recording rec) {
-      return this.title.equals(rec.title) && this.year == rec.year && this.artist.equals(rec.artist);
+      return this.title.equals(rec.title) && this.getYear() == rec.getYear() && this.artist.equals(rec.artist);
     }
 
     return false;
@@ -27,6 +27,24 @@ public class Recording {
 
   public int hashCode() {
     return Objects.hash(this.getYear(), this.getArtist(), this.getTitle());
+  }
+  
+  public int compareTo(Recording rc) {
+    if (this.getYear() < rc.getYear()) {
+      return -1;
+    } else if (this.getYear() > rc.getYear()) {
+      return 1;
+    } else if (this.getArtist().compareTo(rc.getArtist()) < 0) {
+      return -1;
+    } else if (this.getArtist().compareTo(rc.getArtist()) > 0) {
+      return 1;
+    } else if (this.getTitle().compareTo(rc.getTitle()) < 0) {
+      return -1;
+    } else if (this.getTitle().compareTo(rc.getTitle()) > 0) {
+      return 1;
+    }
+    
+    return 0;
   }
 
   public String getArtist() {
