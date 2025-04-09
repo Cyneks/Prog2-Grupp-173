@@ -25,7 +25,7 @@ public class Recording {
 	}
 
   public int hashCode() {
-    return this.getYear() + this.getArtist().hashCode() + this.getTitle().hashCode();
+    return Objects.hash(this.getYear(), this.getArtist(), this.getTitle());
   }
 
   public String getArtist() {
