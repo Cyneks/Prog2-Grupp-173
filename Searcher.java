@@ -1,3 +1,5 @@
+package se.su.ovning2;
+
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.TreeSet;
@@ -17,19 +19,30 @@ public class Searcher implements SearchOperations {
   public long numberOfArtists() {
     String current = "placeholder";
     int counter = 0;
-    while (loop.hasNext()) {
-      System.out.println(loop.hasNext());
-      if (!current.equals(loop.next().getArtist())) {
+    //while (loop.hasNext()) {
+    //  System.out.println(loop.hasNext());
+    //  if (!current.equals(loop.next().getArtist())) {
+    //    counter++;
+    //  }
+//
+    //  current = loop.next().getArtist();
+    //}
+
+    for (Recording rec : set) {
+      if (!current.equals(rec.getArtist())) {
         counter++;
       }
 
-      current = loop.next().getArtist();
+      current = rec.getArtist();
     }
+    
+    //int counter = 0;
+    //for (Recording rec : set) {
+    //  counter++;
+    //  System.out.println(rec);
+    //}
 
     return counter;
-
-    // TODO Auto-generated method stub
-    //throw new UnsupportedOperationException("Unimplemented method 'numberOfArtists'");
   }
 
   @Override
