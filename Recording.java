@@ -1,4 +1,5 @@
 import java.util.Collection;
+import java.util.Objects;
 import java.util.Set;
 
 public class Recording {
@@ -16,9 +17,9 @@ public class Recording {
     this.genre = genre;
   }
 
-  public boolean equals(Recording obj) {
-    if (this.title.equals(obj.title) && this.year == obj.year && this.artist.equals(obj.artist)) {
-      return true;
+  public boolean equals(Object obj) {
+    if (obj instanceof Recording rec) {
+      return this.title.equals(rec.title) && this.year == rec.year && this.artist.equals(rec.artist);
     }
 
     return false;
