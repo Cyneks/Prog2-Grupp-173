@@ -1,5 +1,3 @@
-package se.su.ovning2;
-
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.TreeSet;
