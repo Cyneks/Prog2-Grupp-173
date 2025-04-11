@@ -52,9 +52,9 @@ public class Searcher implements SearchOperations {
   @Override
   public long numberOfTitles() {
     // TODO Auto-generated method stub
-    //long numberOfUniqueTitles = set.stream().map(recording -> recording.getTitle()).distinct().count();
-    //return numberOfUniqueTitles;
-    throw new UnsupportedOperationException("Unimplemented method 'numberOfTitles'");
+    long numberOfUniqueTitles = set.stream().map((Recording recording) -> recording.getTitle()).distinct().count();
+    return numberOfUniqueTitles;
+    //throw new UnsupportedOperationException("Unimplemented method 'numberOfTitles'");
   }
 
   @Override
