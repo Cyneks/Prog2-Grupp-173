@@ -65,7 +65,7 @@ public class Searcher implements SearchOperations {
 
   @Override
   public SortedSet<Recording> getRecordingsByArtistOrderedByYearAsc(String artist) {
-    return artistMap.get(artist);
+    return (SortedSet<Recording>) artistMap.get(artist);
   }
 
   @Override
