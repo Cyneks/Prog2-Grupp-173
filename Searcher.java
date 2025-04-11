@@ -5,7 +5,6 @@ import java.util.TreeSet;
 
 public class Searcher implements SearchOperations {
   private TreeSet<Recording> set = new TreeSet<>();
-  private Iterator<Recording> loop = set.iterator();
 
   public Searcher(Collection<Recording> data) {
     Collection<Recording> recordings = data;
