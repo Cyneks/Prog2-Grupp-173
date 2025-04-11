@@ -1,14 +1,23 @@
-import java.util.Collection;
-import java.util.SortedSet;
-import java.util.TreeSet;
+import java.util.*;
 
 public class Searcher implements SearchOperations {
   private TreeSet<Recording> set = new TreeSet<>();
+  private HashMap<String, Set<Recording>> artistMap = new HashMap<>();
 
   public Searcher(Collection<Recording> data) {
     Collection<Recording> recordings = data;
 
     set.addAll(recordings);
+
+    //HashMap med artister som keys, set med deras låtar som value
+    for (Recording rec : recordings) {
+      String artist = rec.getArtist();
+      if (!artistMap.containsKey(artist)) {
+        artistMap.put(artist, new TreeSet<Recording>());
+      }
+
+      artistMap.get(artist).add(rec);
+    }
   }
 
   @Override
@@ -31,8 +40,7 @@ public class Searcher implements SearchOperations {
 
   @Override
   public boolean doesArtistExist(String name) {
-    // TODO Auto-generated method stub
-    throw new UnsupportedOperationException("Unimplemented method 'doesArtistExist'");
+    return artistMap.containsKey(name);
   }
 
   @Override
@@ -47,8 +55,6 @@ public class Searcher implements SearchOperations {
     .filter(recording -> recording.getTitle()
     .equals(title)).findFirst()
     .orElse(null);
-    // TODO Auto-generated method stub
-    //throw new UnsupportedOperationException("Unimplemented method 'getRecordingByName'");
   }
 
   @Override
