@@ -8,53 +8,27 @@ public class Searcher implements SearchOperations {
   private Iterator<Recording> loop = set.iterator();
 
   public Searcher(Collection<Recording> data) {
-
     Collection<Recording> recordings = data;
+
     set.addAll(recordings);
   }
 
   @Override
   public long numberOfArtists() {
-    String current = "placeholder";
-    int counter = 0;
-    //while (loop.hasNext()) {
-    //  System.out.println(loop.hasNext());
-    //  if (!current.equals(loop.next().getArtist())) {
-    //    counter++;
-    //  }
-//
-    //  current = loop.next().getArtist();
-    //}
-
-    for (Recording rec : set) {
-      if (!current.equals(rec.getArtist())) {
-        counter++;
-      }
-
-      current = rec.getArtist();
-    }
-    
-    //int counter = 0;
-    //for (Recording rec : set) {
-    //  counter++;
-    //  System.out.println(rec);
-    //}
-
-    return counter;
+    long numberOfUniqueArtists = set.stream().map((Recording recording) -> recording.getArtist()).distinct().count();
+    return numberOfUniqueArtists;
   }
 
   @Override
   public long numberOfGenres() {
-    // TODO Auto-generated method stub
-    throw new UnsupportedOperationException("Unimplemented method 'numberOfGenres'");
+    long numberOfUniqueGenres = set.stream().map((Recording recording) -> recording.getGenre()).distinct().count();
+    return numberOfUniqueGenres;
   }
 
   @Override
   public long numberOfTitles() {
-    // TODO Auto-generated method stub
     long numberOfUniqueTitles = set.stream().map((Recording recording) -> recording.getTitle()).distinct().count();
     return numberOfUniqueTitles;
-    //throw new UnsupportedOperationException("Unimplemented method 'numberOfTitles'");
   }
 
   @Override
