@@ -65,8 +65,7 @@ public class Searcher implements SearchOperations {
 
   @Override
   public SortedSet<Recording> getRecordingsByArtistOrderedByYearAsc(String artist) {
-    // TODO Auto-generated method stub
-    throw new UnsupportedOperationException("Unimplemented method 'getRecordingsByArtistOrderedByYearAsc'");
+    return artistMap.get(artist);
   }
 
   @Override
