@@ -1,7 +1,7 @@
 import java.util.Collection;
 import java.util.Iterator;
-import java.util.TreeSet;
 import java.util.SortedSet;
+import java.util.TreeSet;
 
 public class Searcher implements SearchOperations {
   private TreeSet<Recording> set = new TreeSet<>();
@@ -52,7 +52,9 @@ public class Searcher implements SearchOperations {
   @Override
   public long numberOfTitles() {
     // TODO Auto-generated method stub
-    throw new UnsupportedOperationException("Unimplemented method 'numberOfTitles'");
+    long numberOfUniqueTitles = set.stream().map(recording -> recording.getTitle()).distinct().count();
+    return numberOfUniqueTitles;
+    //throw new UnsupportedOperationException("Unimplemented method 'numberOfTitles'");
   }
 
   @Override
