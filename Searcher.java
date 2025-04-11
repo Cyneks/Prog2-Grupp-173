@@ -1,5 +1,4 @@
 import java.util.Collection;
-import java.util.Iterator;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
@@ -44,8 +43,12 @@ public class Searcher implements SearchOperations {
 
   @Override
   public Recording getRecordingByName(String title) {
+    return set.stream()
+    .filter(recording -> recording.getTitle()
+    .equals(title)).findFirst()
+    .orElse(null);
     // TODO Auto-generated method stub
-    throw new UnsupportedOperationException("Unimplemented method 'getRecordingByName'");
+    //throw new UnsupportedOperationException("Unimplemented method 'getRecordingByName'");
   }
 
   @Override
