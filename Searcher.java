@@ -3,6 +3,7 @@ import java.util.*;
 public class Searcher implements SearchOperations {
   private TreeSet<Recording> set = new TreeSet<>();
   private HashMap<String, Set<Recording>> artistMap = new HashMap<>();
+  private HashSet<String> genreSet = new HashSet<>();
 
   public Searcher(Collection<Recording> data) {
     Collection<Recording> recordings = data;
@@ -10,13 +11,18 @@ public class Searcher implements SearchOperations {
     set.addAll(recordings);
 
     //HashMap med artister som keys, set med deras låtar som value
-    for (Recording rec : recordings) {
-      String artist = rec.getArtist();
+    for (Recording album : recordings) {
+      String artist = album.getArtist();
       if (!artistMap.containsKey(artist)) {
         artistMap.put(artist, new TreeSet<Recording>());
       }
 
-      artistMap.get(artist).add(rec);
+      artistMap.get(artist).add(album);
+
+      //Lägger till alla genrer i en recording till ett HashSet
+      for (String genre : album.getGenre()) {
+        genreSet.add(genre);
+      }
     }
   }
 
@@ -28,8 +34,7 @@ public class Searcher implements SearchOperations {
 
   @Override
   public long numberOfGenres() {
-    long numberOfUniqueGenres = set.stream().map((Recording recording) -> recording.getGenre()).distinct().count();
-    return numberOfUniqueGenres;
+    return genreSet.size();
   }
 
   @Override
@@ -65,7 +70,7 @@ public class Searcher implements SearchOperations {
 
   @Override
   public SortedSet<Recording> getRecordingsByArtistOrderedByYearAsc(String artist) {
-    return (SortedSet<Recording>) artistMap.get(artist);
+    return Collections.unmodifiableSortedSet((SortedSet<Recording>) artistMap.get(artist));
   }
 
   @Override
