@@ -50,8 +50,7 @@ public class Searcher implements SearchOperations {
 
   @Override
   public Collection<String> getGenres() {
-    // TODO Auto-generated method stub
-    throw new UnsupportedOperationException("Unimplemented method 'getGenres'");
+    return Collections.unmodifiableCollection(genreSet);
   }
 
   @Override
