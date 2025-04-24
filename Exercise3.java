@@ -1,6 +1,7 @@
 import java.io.BufferedWriter;
 import java.io.DataInputStream;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -11,9 +12,9 @@ import java.util.Map;
 
 public class Exercise3 {
 
-	private final List<Recording> recordings = new ArrayList<>();
+	public final List<Recording> recordings = new ArrayList<>();
 
-	public void exportRecordings(String fileName) throws IOException{
+	public void exportRecordings(String fileName) {
 		//Going to use BufferedWriter and pass FileWriter into it
 		//so the program doesnt need to make unnecessary amounts of trips
 		//to the disc over and over again (speed loss) to write (if you only use FileWriter that is)
@@ -43,48 +44,56 @@ public class Exercise3 {
 
 			buffer.write(fileText.toString());
 
+		} catch (IOException e) {
+			e.printStackTrace();
 		}
 
 	}
 
 	public void importRecordings(String fileName) {
 
-	}
+	} 
 
-	public Map<Integer, Double> importSales(String fileName) throws IOException {
+	public Map<Integer, Double> importSales(String fileName) {
 		HashMap<Integer, Double> salesMap = new HashMap<>();
 		
-		var fileIn = new FileInputStream(fileName);
-		var dataIn = new DataInputStream(fileIn);
+		try {
+			var fileIn = new FileInputStream(fileName);
+			var dataIn = new DataInputStream(fileIn);
 
-		int amount = dataIn.readInt();
+			int amount = dataIn.readInt();
 
-		for (int i = 0; i < amount; i++) {
-			int first = dataIn.readInt();
-			int second = dataIn.readInt();
-			dataIn.readInt();
-			double fourth = dataIn.readDouble();
-			
-			int[] integers = {first, second};
+			for (int i = 0; i < amount; i++) {
+				int first = dataIn.readInt();
+				int second = dataIn.readInt();
+				dataIn.readInt();
+				double fourth = dataIn.readDouble();
 
-			String combined = "";
+				int[] integers = {first, second};
 
-			for (int num : integers) {
-            	if (num < 10) {
-                	combined = combined + "0" + String.valueOf(num);
-            	} else {
-                	combined = combined + String.valueOf(num);
-            	}
-        	}
+				String combined = "";
 
-			if (!salesMap.containsKey(Integer.valueOf(combined))) {
-				salesMap.put(Integer.valueOf(combined), fourth);
-			} else {
-				salesMap.put(Integer.valueOf(combined), salesMap.get(Integer.valueOf(combined)) + fourth);
+				for (int num : integers) {
+        	    	if (num < 10) {
+        	        	combined = combined + "0" + String.valueOf(num);
+        	    	} else {
+        	        	combined = combined + String.valueOf(num);
+        	    	}
+        		}
+
+				if (!salesMap.containsKey(Integer.valueOf(combined))) {
+					salesMap.put(Integer.valueOf(combined), fourth);
+				} else {
+					salesMap.put(Integer.valueOf(combined), salesMap.get(Integer.valueOf(combined)) + fourth);
+				}
 			}
-		}
 
-		fileIn.close();
+			fileIn.close();
+		} catch (FileNotFoundException e) {
+			e.printStackTrace();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
 
 		return salesMap;
 	}
