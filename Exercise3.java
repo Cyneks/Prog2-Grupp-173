@@ -26,23 +26,19 @@ public class Exercise3 {
 
 		for (Recording currentRec : recordings){
 
-			fileText.append("<recording> \n  ");
-			fileText.append("<artist>" + currentRec.getArtist() + "</artist>\n  ");
-			fileText.append("<title>" + currentRec.getTitle() + "</title>\n  ");
-			fileText.append("<year>" + currentRec.getYear() + "</year>\n  ");
-			fileText.append("<genres>\n    ");
+			fileText.append("<recording>\n");
+			fileText.append("  <artist>" + currentRec.getArtist() + "</artist>\n");
+			fileText.append("  <title>" + currentRec.getTitle() + "</title>\n");
+			fileText.append("  <year>" + currentRec.getYear() + "</year>\n");
+			fileText.append("  <genres>\n");
 
-			int idx = 0;
-			int idxOfLastGenre = currentRec.getGenre().size() - 1;
 			for (String currentGenre : currentRec.getGenre()){
 
-				if (idx == idxOfLastGenre) fileText.append("<genre>" + currentGenre + "</genre>\n  ");
-				else fileText.append("<genre>" + currentGenre + "</genre>\n    ");
-				idx++;
+				fileText.append("    <genre>" + currentGenre + "</genre>\n");
 
 			}
 
-			fileText.append("</genres>\n");
+			fileText.append("<  /genres>\n");
 			fileText.append("</recording>\n");
 
 		}
