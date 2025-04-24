@@ -12,7 +12,7 @@ import java.util.Map;
 
 public class Exercise3 {
 
-	public final List<Recording> recordings = new ArrayList<>();
+	private final List<Recording> recordings = new ArrayList<>();
 
 	public void exportRecordings(String fileName) {
 		//Going to use BufferedWriter and pass FileWriter into it
