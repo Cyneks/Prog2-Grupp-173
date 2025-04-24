@@ -18,33 +18,32 @@ public class Exercise3 {
 		//so the program doesnt need to make unnecessary amounts of trips
 		//to the disc over and over again (speed loss) to write (if you only use FileWriter that is)
 		//BufferedWriter buffers all strings and access disc to write in file only if i close or it reaches storage limit per buffer
-		BufferedWriter buffer = new BufferedWriter(new FileWriter(fileName));
+		try (BufferedWriter buffer = new BufferedWriter(new FileWriter(fileName))) {
 
-		StringBuilder fileText = new StringBuilder();
+			StringBuilder fileText = new StringBuilder();
 
-		
+			for (Recording currentRec : recordings){
 
-		for (Recording currentRec : recordings){
+				fileText.append("<recording>\n");
+				fileText.append("  <artist>").append(currentRec.getArtist()).append("</artist>\n");
+				fileText.append("  <title>").append(currentRec.getTitle()).append("</title>\n");
+				fileText.append("  <year>").append(currentRec.getYear()).append("</year>\n");
+				fileText.append("  <genres>\n");
 
-			fileText.append("<recording>\n");
-			fileText.append("  <artist>" + currentRec.getArtist() + "</artist>\n");
-			fileText.append("  <title>" + currentRec.getTitle() + "</title>\n");
-			fileText.append("  <year>" + currentRec.getYear() + "</year>\n");
-			fileText.append("  <genres>\n");
+				for (String currentGenre : currentRec.getGenre()){
 
-			for (String currentGenre : currentRec.getGenre()){
+					fileText.append("    <genre>").append(currentGenre).append("</genre>\n");
 
-				fileText.append("    <genre>" + currentGenre + "</genre>\n");
+				}
+
+				fileText.append("  </genres>\n");
+				fileText.append("</recording>\n");
 
 			}
 
-			fileText.append("<  /genres>\n");
-			fileText.append("</recording>\n");
+			buffer.write(fileText.toString());
 
 		}
-
-		buffer.write(fileText.toString());
-		buffer.close();
 
 	}
 
