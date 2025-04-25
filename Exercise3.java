@@ -1,17 +1,7 @@
-import java.io.BufferedWriter;
-import java.io.DataInputStream;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.io.*;
+import java.util.*;
 
-public class Exercise3 {
-
+public class Main {
 	private final List<Recording> recordings = new ArrayList<>();
 
 	public void exportRecordings(String fileName) {
@@ -49,14 +39,38 @@ public class Exercise3 {
 		}
 
 	}
-
 	public void importRecordings(String fileName) {
+		try (BufferedReader br = new BufferedReader(new FileReader(fileName))) {
+			String line;
+			while ((line = br.readLine() != null)) {
+				if (line.contains(";")) {
+					String[] parts = line.split(";");
+					String artist = parts[0];
+					String album = parts[1];
+					int year = Integer.parse(parts[2]);
 
-	} 
+					line = br.readLine();
+					int genreCount = Integer.parseInt(line);
+
+					Set<String> genres = new LinkedHashSet<>();
+					for (inr i = 0; i < genreCount; i++) {
+						line.br.readLine();
+						genres.add(line);
+					}
+					Recording rec = new Recording(album, artist, year, genres);
+					recording.add(rec);
+				}
+			}
+		} catch (FileNotFoundException) {
+			System.err.println("File not found");
+		} catch (IOException err) {
+		}
+	}
+
 
 	public Map<Integer, Double> importSales(String fileName) {
 		HashMap<Integer, Double> salesMap = new HashMap<>();
-		
+
 		try {
 			var fileIn = new FileInputStream(fileName);
 			var dataIn = new DataInputStream(fileIn);
@@ -74,12 +88,12 @@ public class Exercise3 {
 				String combined = "";
 
 				for (int num : integers) {
-        	    	if (num < 10) {
-        	        	combined = combined + "0" + String.valueOf(num);
-        	    	} else {
-        	        	combined = combined + String.valueOf(num);
-        	    	}
-        		}
+					if (num < 10) {
+						combined = combined + "0" + String.valueOf(num);
+					} else {
+						combined = combined + String.valueOf(num);
+					}
+				}
 
 				if (!salesMap.containsKey(Integer.valueOf(combined))) {
 					salesMap.put(Integer.valueOf(combined), fourth);
@@ -106,4 +120,6 @@ public class Exercise3 {
 		this.recordings.clear();
 		this.recordings.addAll(recordings);
 	}
+
+
 }
