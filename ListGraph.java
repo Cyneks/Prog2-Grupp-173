@@ -85,7 +85,7 @@ public class ListGraph<T> implements Graph<T> {
 
     Collection<Edge<T>> edges = getEdgesFrom(node);
 
-    //Skapar en ny list för att unvdvika ConcurrentModificationException
+    //Skapar en ny list för att unvdvika ConcurrentModificationException - Mattias
     ArrayList<Edge<T>> toRemove = new ArrayList<>();
 
     for (Edge<T> edge : edges) {
@@ -124,7 +124,7 @@ public class ListGraph<T> implements Graph<T> {
     }
   }
 
-  //getPath med depth-first sökning
+  //getPath med depth-first sökning, gjorde denna först ifall jag inte tänkte göra Dijkstras algoritm lösningen - Mattias
   public List<Edge<T>> getPathWithDepth(T from, T to) {
     if (!pathExists(from, to)) {
       return null;
@@ -146,7 +146,7 @@ public class ListGraph<T> implements Graph<T> {
     return path;
   }
 
-  //getPath implementation med Dijkstras algoritm, hittar optimala vägen baserat på weight
+  //getPath implementation med Dijkstras algoritm, hittar optimala vägen baserat på weight, använd denna - Mattias
   public List<Edge<T>> getPath(T from, T to) {
     if (!pathExists(from, to)) {
       return null;
