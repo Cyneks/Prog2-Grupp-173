@@ -79,20 +79,21 @@ public class Exercise4 {
 
       }
 
-      SortedMap<Integer, SortedSet<Record>> result = new TreeMap<>(Collections.reverseOrder());
+      SortedMap<Integer, SortedSet<Record>> alsoLiked = new TreeMap<>(Collections.reverseOrder());
 
       for (Map.Entry<Record, Integer> entry : recordCount.entrySet()){
          
          int count = entry.getValue();
-         result.computeIfAbsent(count, k -> new TreeSet<>(Comparator.comparing(Record::getName))).add(entry.getKey());
+         alsoLiked.computeIfAbsent(count, k -> new TreeSet<>(Comparator.comparing(Record::getName))).add(entry.getKey());
 
       }
 
-       return result;
+       return alsoLiked;
     }
 
     public int getPopularity(Record item) {
-       return getEdgesFrom(item).size();
+      if (!graph.getNodes().contains(item)) return 0;
+      return graph.getEdgesFrom(item).size();
     }
 
     public SortedMap<Integer, Set<Record>> getTop5() {
