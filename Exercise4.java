@@ -2,11 +2,15 @@ import java.io.BufferedReader;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
-import java.util.LinkedHashSet;
+import java.util.Map;
 import java.util.Set;
-import java.util.SortedSet;
 import java.util.SortedMap;
+import java.util.SortedSet;
+import java.util.TreeMap;
+import java.util.TreeSet;
 
 public class Exercise4 {
     private Graph<Node> graph = new ListGraph<>();
@@ -50,7 +54,41 @@ public class Exercise4 {
     }
 
     public SortedMap<Integer, SortedSet<Record>> getAlsoLiked(Record item) {
-       return null;
+      
+      HashMap<Record, Integer> recordCount = new HashMap<>();
+
+      for (Edge<Node> itemEdge : graph.getEdgesFrom(item)){
+
+         Node personConnectedToItem = itemEdge.getDestination();
+
+         if (personConnectedToItem instanceof Person person){
+
+            person = (Person) personConnectedToItem;
+
+            for (Edge<Node> personEdge : graph.getEdgesFrom(person)){
+
+               Node personRecords = personEdge.getDestination();
+
+               if (personRecords instanceof Record personRecord && !personRecord.equals(item)){
+                  recordCount.put(personRecord, recordCount.getOrDefault(personRecord, 0) + 1);
+               }
+
+            }
+
+         }
+
+      }
+
+      SortedMap<Integer, SortedSet<Record>> result = new TreeMap<>(Collections.reverseOrder());
+
+      for (Map.Entry<Record, Integer> entry : recordCount.entrySet()){
+         
+         int count = entry.getValue();
+         result.computeIfAbsent(count, k -> new TreeSet<>(Comparator.comparing(Record::getName))).add(entry.getKey());
+
+      }
+
+       return result;
     }
 
     public int getPopularity(Record item) {
@@ -58,7 +96,51 @@ public class Exercise4 {
     }
 
     public SortedMap<Integer, Set<Record>> getTop5() {
-       return null;
+
+      SortedMap<Integer, Set<Record>> allRecords = new TreeMap<>(Collections.reverseOrder());
+
+      HashMap<Record, Integer> amountOfLikes = new HashMap<>();
+
+      for (Node node : graph.getNodes()){
+
+         if (node instanceof Person){
+
+            for (Edge<Node> personEdge : graph.getEdgesFrom(node)){
+
+               Node currentNode = personEdge.getDestination();
+
+               if (currentNode instanceof Record record){
+                  amountOfLikes.put(record, amountOfLikes.getOrDefault(amountOfLikes, 0) + 1);
+               }
+
+            }
+
+         }
+
+      }
+
+      for (Map.Entry<Record, Integer> entry : amountOfLikes.entrySet()){
+         Record record = entry.getKey();
+         Integer count = entry.getValue();
+
+         allRecords.computeIfAbsent(count, k -> new TreeSet<>(Comparator.comparing(Record::getName))).add(record);
+
+      }
+
+      SortedMap<Integer, Set<Record>> topFive = new TreeMap<>(Collections.reverseOrder());
+      int added = 0;
+      int limit = 5;
+
+      for (Map.Entry<Integer, Set<Record>> entry : allRecords.entrySet()){
+
+         if (added >= limit) break;
+         topFive.put(entry.getKey(), entry.getValue());
+         added++;
+
+      }
+
+       return topFive;
+
     }
 
     public void loadRecommendationGraph(String fileName) {
