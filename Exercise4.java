@@ -54,7 +54,7 @@ public class Exercise4 {
     }
 
     public int getPopularity(Record item) {
-       return -1;
+       return getEdgesFrom(item).size();
     }
 
     public SortedMap<Integer, Set<Record>> getTop5() {
