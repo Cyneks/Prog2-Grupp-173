@@ -5,7 +5,6 @@ import java.io.IOException;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
-import java.util.Map;
 import java.util.Set;
 import java.util.SortedMap;
 import java.util.SortedSet;
@@ -13,9 +12,9 @@ import java.util.TreeMap;
 import java.util.TreeSet;
 
 public class Exercise4 {
-    private Graph<Node> graph = new ListGraph<>();
+   public Graph<Node> graph = new ListGraph<>();
 
-    public void loadLocationGraph(String fileName){
+   public void loadLocationGraph(String fileName){
       HashMap<String, Node> nodes = new HashMap<>();
 
       try (BufferedReader br = new BufferedReader(new FileReader(fileName))) {
@@ -51,100 +50,71 @@ public class Exercise4 {
       } catch (IOException e) {
          e.printStackTrace();
       }
-    }
+   }
 
-    public SortedMap<Integer, SortedSet<Record>> getAlsoLiked(Record item) {
-      
-      HashMap<Record, Integer> recordCount = new HashMap<>();
-
-      for (Edge<Node> itemEdge : graph.getEdgesFrom(item)){
-
-         Node personConnectedToItem = itemEdge.getDestination();
-
-         if (personConnectedToItem instanceof Person person){
-
-            person = (Person) personConnectedToItem;
-
-            for (Edge<Node> personEdge : graph.getEdgesFrom(person)){
-
-               Node personRecords = personEdge.getDestination();
-
-               if (personRecords instanceof Record personRecord && !personRecord.equals(item)){
-                  recordCount.put(personRecord, recordCount.getOrDefault(personRecord, 0) + 1);
-               }
-
-            }
-
-         }
-
-      }
-
+   public SortedMap<Integer, SortedSet<Record>> getAlsoLiked(Record item) { 
       SortedMap<Integer, SortedSet<Record>> alsoLiked = new TreeMap<>(Collections.reverseOrder());
 
-      for (Map.Entry<Record, Integer> entry : recordCount.entrySet()){
-         
-         int count = entry.getValue();
-         alsoLiked.computeIfAbsent(count, k -> new TreeSet<>(Comparator.comparing(Record::getName))).add(entry.getKey());
+      for (Edge<Node> itemEdge : graph.getEdgesFrom(item)){
+         Node personConnectedToItem = (Person) itemEdge.getDestination();
 
-      }
+         for (Edge<Node> personEdge : graph.getEdgesFrom(personConnectedToItem)){
+            Record recordConnectedToPerson = (Record) personEdge.getDestination();
 
-       return alsoLiked;
-    }
-
-    public int getPopularity(Record item) {
-      if (!graph.getNodes().contains(item)) return 0;
-      return graph.getEdgesFrom(item).size();
-    }
-
-    public SortedMap<Integer, Set<Record>> getTop5() {
-
-      SortedMap<Integer, Set<Record>> allRecords = new TreeMap<>(Collections.reverseOrder());
-
-      HashMap<Record, Integer> amountOfLikes = new HashMap<>();
-
-      for (Node node : graph.getNodes()){
-
-         if (node instanceof Person){
-
-            for (Edge<Node> personEdge : graph.getEdgesFrom(node)){
-
-               Node currentNode = personEdge.getDestination();
-
-               if (currentNode instanceof Record record){
-                  amountOfLikes.put(record, amountOfLikes.getOrDefault(amountOfLikes, 0) + 1);
-               }
-
+            if (!alsoLiked.containsKey(getPopularity(recordConnectedToPerson))) {
+               alsoLiked.put(getPopularity(recordConnectedToPerson), new TreeSet<Record>(Comparator.comparing(Record::getName)));
             }
 
+            alsoLiked.get(getPopularity(recordConnectedToPerson)).add(recordConnectedToPerson);
          }
-
       }
 
-      for (Map.Entry<Record, Integer> entry : amountOfLikes.entrySet()){
-         Record record = entry.getKey();
-         Integer count = entry.getValue();
+      return alsoLiked;
+   }
 
-         allRecords.computeIfAbsent(count, k -> new TreeSet<>(Comparator.comparing(Record::getName))).add(record);
+   public int getPopularity(Record item) {
+      if (!graph.getNodes().contains(item)) return 0;
+      return graph.getEdgesFrom(item).size();
+   }
 
+   public SortedMap<Integer, Set<Record>> getTop5() {
+      SortedMap<Integer, Set<Record>> allRecords = new TreeMap<>(Collections.reverseOrder());
+
+      for (Node node : graph.getNodes()) {
+         if (node instanceof Record) {
+            for (Edge<Node> itemEdge : graph.getEdgesFrom(node)) {
+               Node personConnectedToItem = (Person) itemEdge.getDestination();
+      
+               for (Edge<Node> personEdge : graph.getEdgesFrom(personConnectedToItem)) {
+                  Record recordConnectedToPerson = (Record) personEdge.getDestination();
+      
+                  if (!allRecords.containsKey(getPopularity(recordConnectedToPerson))) {
+                     allRecords.put(getPopularity(recordConnectedToPerson), new TreeSet<Record>(Comparator.comparing(Record::getName)));
+                  }
+      
+                  allRecords.get(getPopularity(recordConnectedToPerson)).add(recordConnectedToPerson);
+               }
+            }
+         }
+      }
+
+      int amount = 5;
+      if (allRecords.keySet().size() < 5) {
+         amount = allRecords.keySet().size();
       }
 
       SortedMap<Integer, Set<Record>> topFive = new TreeMap<>(Collections.reverseOrder());
-      int added = 0;
-      int limit = 5;
+      for (int i = 0; i < amount; i++) {
+         Integer max = Collections.max(allRecords.keySet());
 
-      for (Map.Entry<Integer, Set<Record>> entry : allRecords.entrySet()){
-
-         if (added >= limit) break;
-         topFive.put(entry.getKey(), entry.getValue());
-         added++;
-
+         topFive.put(max, allRecords.get(max));
+         allRecords.remove(max);
       }
 
-       return topFive;
+      return topFive;
+   }
 
-    }
-
-    public void loadRecommendationGraph(String fileName) {
+   public void loadRecommendationGraph(String fileName) {
       HashMap<String, Node> nodes = new HashMap<>();
 
       try (BufferedReader br = new BufferedReader(new FileReader(fileName))) {
@@ -152,24 +122,23 @@ public class Exercise4 {
          while ((line = br.readLine()) != null) {
 				String[] parts = line.split(";");
 
-            String pName = parts[0];
-            Person person = new Person(pName);
-            nodes.putIfAbsent(pName, person);
+            String personName = parts[0];
+            Person person = new Person(personName);
+            nodes.putIfAbsent(personName, person);
             graph.add(person);
 
-            String rName = parts[1];
-            String rArtist = parts[2];
-            Record record = new Record(rName, rArtist);
+            String recordName = parts[1];
+            String recordArtist = parts[2];
+            Record record = new Record(recordName, recordArtist);
             nodes.putIfAbsent(parts[1], record);
             graph.add(record);
 
-				graph.connect(nodes.get(pName), nodes.get(rName), "Edge", 0);
+				graph.connect(nodes.get(personName), nodes.get(recordName), "Edge", 0);
 			}
       } catch (FileNotFoundException e) {
          e.printStackTrace();
       } catch (IOException e) {
          e.printStackTrace();
       }
-    }
-
+   }
 }
