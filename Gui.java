@@ -2,27 +2,35 @@ package se.su.inlupp;
 
 import javafx.application.Application;
 import javafx.geometry.Pos;
+import javafx.scene.Cursor;
 import javafx.scene.Scene;
+import javafx.scene.control.*;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
-import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
-import javafx.scene.layout.StackPane;
+import javafx.scene.layout.Pane;
 import javafx.scene.layout.VBox;
+import javafx.scene.paint.Color;
+import javafx.scene.shape.Circle;
+import javafx.scene.text.Font;
+import javafx.scene.text.FontWeight;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
-import javafx.scene.control.*;
 import java.io.File;
 import java.net.MalformedURLException;
+import java.util.ArrayList;
+import java.util.Optional;
 
 public class Gui extends Application {
   public void start(Stage stage) {
     Graph<Node> graph = new ListGraph<Node>();
+    ArrayList<Circle> selected = new ArrayList<>();
 
     FileChooser fileChooser = new FileChooser();
 
     stage.setWidth(525);
     stage.setMaxHeight(1000);
+    stage.setTitle("Pathfinder");
 
     Menu menu = new Menu("File");
     MenuItem newMapButton = new MenuItem("New Map");
@@ -47,34 +55,81 @@ public class Gui extends Application {
     ImageView imgView = new ImageView();
     imgView.setPreserveRatio(true);
 
-    VBox root = new VBox(menuBar, buttons, imgView);
+    Pane viewPane = new Pane(imgView);
+
+    VBox root = new VBox(menuBar, buttons, viewPane);
     root.setAlignment(Pos.TOP_CENTER);
     root.setSpacing(5);
 
     Scene scene = new Scene(root);
-    stage.setTitle("Pathfinder");
+
     stage.setScene(scene);
     stage.show();
 
+    //Meny
     newMapButton.setOnAction(e -> {
       File map = fileChooser.showOpenDialog(stage);
       try {
         Image image = new Image(map.toURI().toURL().toString());
 
-        double aspectRatio = image.getHeight() / image.getWidth();
-
         imgView.setImage(image);
 
-        stage.setWidth(image.getWidth() + (image.getWidth() * 0.2));
-        stage.setHeight(image.getHeight() + 5 + 99);
+        stage.setMaxWidth(image.getWidth() + 17);
+        stage.setMaxHeight(image.getHeight() + 99);
+        stage.setWidth(image.getWidth() + 17);
+        stage.setHeight(image.getHeight() + 99);
         imgView.setFitWidth(image.getWidth());
-
-        //Alternativt
-        //imgView.setFitWidth(image.getWidth() * 0.9 / (image.getWidth() / root.getWidth()));
-        //stage.setHeight(imgView.getFitWidth() * aspectRatio + 99 + 5);
       } catch(MalformedURLException ex) {
         ex.printStackTrace();
       }
+    });
+
+    //Knappar
+    newPlaceButton.setOnAction(e -> {
+      newPlaceButton.setDisable(true);
+      scene.setCursor(Cursor.CROSSHAIR);
+
+      imgView.setOnMouseClicked(locationHandler -> {
+        TextInputDialog input = new TextInputDialog();
+        input.setHeaderText(null);
+        input.setTitle("Name");
+        input.setContentText("Name of place:");
+
+        Optional<String> result = input.showAndWait();
+        if (result.isPresent()) {
+          Node loc = new Node(result.get(), locationHandler.getX(), locationHandler.getY());
+          graph.add(loc);
+
+          Circle location = new Circle();
+          location.setCenterX(locationHandler.getX());
+          location.setCenterY(locationHandler.getY());
+          location.setRadius(10.0f);
+          location.setFill(Color.RED);
+          location.managedProperty().set(false);
+
+          Label locationName = new Label(result.get());
+          locationName.setFont(Font.font("Helvetica", FontWeight.BOLD,14));
+          locationName.relocate(locationHandler.getX(), locationHandler.getY() + 5);
+          viewPane.getChildren().addAll(location, locationName);
+
+          location.setOnMouseClicked(selectHandler -> {
+            if (selected.size() <= 2) {
+              if (selected.contains(location)) {
+                location.setFill(Color.RED);
+                selected.remove(location);
+              } else if (!selected.contains(location) && selected.size() < 2) {
+                location.setFill(Color.BLUE);
+                selected.add(location);
+              }
+            }
+          });
+        }
+
+        newPlaceButton.setDisable(false);
+        scene.setCursor(Cursor.DEFAULT);
+
+        imgView.setOnMouseClicked(null);
+      });
     });
   }
 
