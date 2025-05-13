@@ -1,12 +1,12 @@
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.List;
-import java.util.Set;
-import java.util.Map;
-import java.util.NoSuchElementException;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.NoSuchElementException;
+import java.util.Set;
 
 public class ListGraph<T> implements Graph<T> {
   private Map<T, Set<Edge<T>>> nodes = new HashMap<T, Set<Edge<T>>>();
@@ -138,7 +138,7 @@ public class ListGraph<T> implements Graph<T> {
     while (current != null && !current.equals(from)) {
       T next = connection.get(current);
       Edge<T> edge = getEdgeBetween(next, current);
-      path.addFirst(edge);
+      //path.addFirst(edge);
 
       current = next;
     }

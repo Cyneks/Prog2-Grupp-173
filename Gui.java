@@ -1,10 +1,20 @@
-package se.su.inlupp;
+//package se.su.inlupp;
+
+import java.io.File;
+import java.net.MalformedURLException;
+import java.util.ArrayList;
+import java.util.Optional;
 
 import javafx.application.Application;
 import javafx.geometry.Pos;
 import javafx.scene.Cursor;
 import javafx.scene.Scene;
-import javafx.scene.control.*;
+import javafx.scene.control.Button;
+import javafx.scene.control.Label;
+import javafx.scene.control.Menu;
+import javafx.scene.control.MenuBar;
+import javafx.scene.control.MenuItem;
+import javafx.scene.control.TextInputDialog;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.HBox;
@@ -16,10 +26,6 @@ import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
-import java.io.File;
-import java.net.MalformedURLException;
-import java.util.ArrayList;
-import java.util.Optional;
 
 public class Gui extends Application {
   public void start(Stage stage) {
@@ -97,8 +103,8 @@ public class Gui extends Application {
 
         Optional<String> result = input.showAndWait();
         if (result.isPresent()) {
-          Node loc = new Node(result.get(), locationHandler.getX(), locationHandler.getY());
-          graph.add(loc);
+          //Node loc = new Node(result.get(), locationHandler.getX(), locationHandler.getY());
+          //graph.add(loc);
 
           Circle location = new Circle();
           location.setCenterX(locationHandler.getX());
