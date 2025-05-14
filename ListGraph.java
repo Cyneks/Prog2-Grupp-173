@@ -138,7 +138,7 @@ public class ListGraph<T> implements Graph<T> {
     while (current != null && !current.equals(from)) {
       T next = connection.get(current);
       Edge<T> edge = getEdgeBetween(next, current);
-      //path.addFirst(edge);
+      path.addFirst(edge);
 
       current = next;
     }
