@@ -124,7 +124,11 @@ public class Gui extends Application {
       try (BufferedReader br = new BufferedReader(new FileReader(file))) {
         String image = br.readLine();
         String[] path = image.split(":");
-        imageFile = path[1];
+        if (path.length == 2) {
+          imageFile = path[1];
+        } else {
+          imageFile = path[1] + ":" + path[2];
+        }
         setMap(stage, new Image(image), imgView);
 
         String line = br.readLine();
