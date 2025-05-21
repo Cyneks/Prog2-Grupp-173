@@ -1,10 +1,10 @@
 package se.su.inlupp;
 
-import java.io.File;
+import java.io.*;
 import java.net.MalformedURLException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Optional;
-
 import javafx.application.Application;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -36,11 +36,16 @@ import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 
 public class Gui extends Application {
+  private String imageFile;
+
+  //Om changes = 0, inga ändringar har skett som måste sparas. Om changes = 1, ändrignar har skett som bör sparas.
+  private int changes;
+
+  private record ConnectionData(String name, String time) {}
+
   public void start(Stage stage) {
     Graph<Node> graph = new ListGraph<Node>();
     ArrayList<Circle> selected = new ArrayList<>();
-
-    FileChooser fileChooser = new FileChooser();
 
     stage.setWidth(525);
     stage.setMaxHeight(1000);
@@ -82,19 +87,115 @@ public class Gui extends Application {
 
     //Meny
     newMapButton.setOnAction(e -> {
+      FileChooser fileChooser = new FileChooser();
+      fileChooser.getExtensionFilters().addAll(
+              new FileChooser.ExtensionFilter("GIF", "*.gif"),
+              new FileChooser.ExtensionFilter("PNG", "*.png"),
+              new FileChooser.ExtensionFilter("JPG", "*.jpg"),
+              new FileChooser.ExtensionFilter("JPEG", "*.jpeg")
+      );
       File map = fileChooser.showOpenDialog(stage);
+      imageFile = map.getPath();
+
       try {
         Image image = new Image(map.toURI().toURL().toString());
 
-        imgView.setImage(image);
+        setMap(stage, image, imgView);
 
-        stage.setMaxWidth(image.getWidth() + 17);
-        stage.setMaxHeight(image.getHeight() + 99);
-        stage.setWidth(image.getWidth() + 17);
-        stage.setHeight(image.getHeight() + 99);
-        imgView.setFitWidth(image.getWidth());
+        //imgView.setImage(image);
+
+        //stage.setMaxWidth(image.getWidth() + 16);
+        //stage.setMaxHeight(image.getHeight() + 99);
+        //stage.setWidth(image.getWidth() + 16);
+        //stage.setHeight(image.getHeight() + 99);
+        //imgView.setFitWidth(image.getWidth());
       } catch(MalformedURLException ex) {
         ex.printStackTrace();
+      }
+    });
+
+    openButton.setOnAction(e -> {
+      HashMap<String, Node> nodes = new HashMap<>();
+
+      FileChooser fileChooser = new FileChooser();
+      fileChooser.getExtensionFilters().addAll(new FileChooser.ExtensionFilter("Graph", "*.graph"));
+      File file = fileChooser.showOpenDialog(stage);
+
+      try (BufferedReader br = new BufferedReader(new FileReader(file))) {
+        String image = br.readLine();
+        String[] path = image.split(":");
+        imageFile = path[1];
+        setMap(stage, new Image(image), imgView);
+
+        String line = br.readLine();
+        String[] parts = line.split(";");
+
+        String name;
+        double coordX;
+        double coordY;
+        for(int i = 0; i < parts.length; i += 3) {
+          name = parts[i];
+          coordX = Double.valueOf(parts[i + 1]);
+          coordY = Double.valueOf(parts[i + 2]);
+
+          createLocation(name, coordX, coordY, graph, selected, viewPane);
+
+          Node place = new Node(name, coordX, coordY);
+          nodes.put(parts[i], place);
+        }
+
+        while ((line = br.readLine()) != null) {
+          parts = line.split(";");
+
+          String from = parts[0];
+          String to = parts[1];
+          String method = parts[2];
+          int time = Integer.valueOf(parts[3]);
+
+          if (!graph.pathExists(nodes.get(from), nodes.get(to))) {
+            createConnection(nodes.get(from), nodes.get(to), method, time, graph, viewPane);
+          }
+        }
+      } catch (FileNotFoundException ex) {
+        ex.printStackTrace();
+      } catch (IOException ex) {
+        ex.printStackTrace();
+      }
+    });
+
+    saveButton.setOnAction(e -> {
+      if (changes == 1) {
+        FileChooser saver = new FileChooser();
+        saver.getExtensionFilters().addAll(new FileChooser.ExtensionFilter("Graph", "*.graph"));
+        File file = saver.showSaveDialog(stage);
+
+        try (BufferedWriter buffer = new BufferedWriter(new FileWriter(file))) {
+          StringBuilder graphInfo = new StringBuilder();
+
+          graphInfo.append("file:").append(imageFile).append("\n");
+          for (Node node : graph.getNodes()) {
+            graphInfo.append(node.getName()).append(";").append(node.getCoordX()).append(";").append(node.getCoordY()).append(";");
+          }
+
+          graphInfo.setLength(graphInfo.length() - 1);
+          graphInfo.append("\n");
+
+          for (Node node : graph.getNodes()) {
+            for (Edge<Node> edge : graph.getEdgesFrom(node)) {
+              graphInfo.append(node.getName()).append(";").append(edge.getDestination()).append(";").append(edge.getName()).append(";").append(edge.getWeight()).append("\n");
+            }
+          }
+
+          graphInfo.setLength(graphInfo.length() - 1);
+
+          buffer.write(graphInfo.toString());
+        } catch (IOException ex) {
+          ex.printStackTrace();
+        }
+
+        changes = 0;
+      } else {
+        ShowErrorTab("No changes to save");
       }
     });
 
@@ -111,33 +212,36 @@ public class Gui extends Application {
 
         Optional<String> result = input.showAndWait();
         if (result.isPresent()) {
-          Node loc = new Node(result.get(), locationHandler.getX(), locationHandler.getY());
-          graph.add(loc);
+          createLocation(result.get(), locationHandler.getX(), locationHandler.getY(), graph, selected, viewPane);
+          //Node loc = new Node(result.get(), locationHandler.getX(), locationHandler.getY());
+          //graph.add(loc);
 
-          Circle location = new Circle();
-          location.setCenterX(locationHandler.getX());
-          location.setCenterY(locationHandler.getY());
-          location.setRadius(10.0f);
-          location.setFill(Color.RED);
-          location.managedProperty().set(false);
-          location.setUserData(loc);
+          //Circle location = new Circle();
+          //location.setCenterX(locationHandler.getX());
+          //location.setCenterY(locationHandler.getY());
+          //location.setRadius(10.0f);
+          //location.setFill(Color.RED);
+          //location.managedProperty().set(false);
+          //location.setUserData(loc);
 
-          Label locationName = new Label(result.get());
-          locationName.setFont(Font.font("Helvetica", FontWeight.BOLD,14));
-          locationName.relocate(locationHandler.getX(), locationHandler.getY() + 5);
-          viewPane.getChildren().addAll(location, locationName);
+          //Label locationName = new Label(result.get());
+          //locationName.setFont(Font.font("Helvetica", FontWeight.BOLD,14));
+          //locationName.relocate(locationHandler.getX(), locationHandler.getY() + 5);
+          //viewPane.getChildren().addAll(location, locationName);
 
-          location.setOnMouseClicked(selectHandler -> {
-            if (selected.size() <= 2) {
-              if (selected.contains(location)) {
-                location.setFill(Color.RED);
-                selected.remove(location);
-              } else if (!selected.contains(location) && selected.size() < 2) {
-                location.setFill(Color.BLUE);
-                selected.add(location);
-              }
-            }
-          });
+          //location.setOnMouseClicked(selectHandler -> {
+          //  if (selected.size() <= 2) {
+          //    if (selected.contains(location)) {
+          //      location.setFill(Color.RED);
+          //      selected.remove(location);
+          //    } else if (!selected.contains(location) && selected.size() < 2) {
+          //      location.setFill(Color.BLUE);
+          //      selected.add(location);
+          //    }
+          //  }
+          //});
+
+          changes = 1;
         }
 
         newPlaceButton.setDisable(false);
@@ -148,7 +252,6 @@ public class Gui extends Application {
     });
 
     newConnectionButton.setOnAction(e -> {
-
       if (selected.size() != 2){
         ShowErrorTab("You need to select two locations");
         return;
@@ -174,72 +277,124 @@ public class Gui extends Application {
 
       // }
 
-    Dialog<ConnectionData> dialog = new Dialog<>();
-    dialog.setTitle("Connection");
-    dialog.setHeaderText(String.format("Connection from %s to %s", a.getName(), b.getName()));
+      Dialog<ConnectionData> dialog = new Dialog<>();
+      dialog.setTitle("Connection");
+      dialog.setHeaderText(String.format("Connection from %s to %s", a.getName(), b.getName()));
 
-    ButtonType okButtonType = new ButtonType("OK", ButtonBar.ButtonData.OK_DONE);
-    dialog.getDialogPane().getButtonTypes().addAll(okButtonType, ButtonType.CANCEL);
+      ButtonType okButtonType = new ButtonType("OK", ButtonBar.ButtonData.OK_DONE);
+      dialog.getDialogPane().getButtonTypes().addAll(okButtonType, ButtonType.CANCEL);
 
-    TextField nameField = new TextField();
-    //nameField.setPromptText("Name");
+      TextField nameField = new TextField();
+      //nameField.setPromptText("Name");
 
-    TextField timeField = new TextField();
-    //timeField.setPromptText("Time");
+      TextField timeField = new TextField();
+      //timeField.setPromptText("Time");
 
-    GridPane grid = new GridPane();
-    grid.setHgap(10);
-    grid.setVgap(10);
-    grid.setPadding(new Insets(20, 150, 10, 10));
+      GridPane grid = new GridPane();
+      grid.setHgap(10);
+      grid.setVgap(10);
+      grid.setPadding(new Insets(20, 150, 10, 10));
 
-    grid.add(new Label("Name:"), 0, 0);
-    grid.add(nameField, 1, 0);
-    grid.add(new Label("Time:"), 0, 1);
-    grid.add(timeField, 1, 1);
+      grid.add(new Label("Name:"), 0, 0);
+      grid.add(nameField, 1, 0);
+      grid.add(new Label("Time:"), 0, 1);
+      grid.add(timeField, 1, 1);
 
-    dialog.getDialogPane().setContent(grid);
+      dialog.getDialogPane().setContent(grid);
 
-    dialog.setResultConverter(dialogButton -> {
+      dialog.setResultConverter(dialogButton -> {
         if (dialogButton == okButtonType) {
             return new ConnectionData(nameField.getText(), timeField.getText());
         }
         return null;
-    });
+      });
 
-    Optional<ConnectionData> result = dialog.showAndWait();
+      Optional<ConnectionData> result = dialog.showAndWait();
 
-    result.ifPresent(connectionData -> {
+      result.ifPresent(connectionData -> {
         try {
 
-            int time = Integer.parseInt(connectionData.time());
+          int time = Integer.parseInt(connectionData.time());
 
-            graph.connect(a, b, connectionData.name(), time);
+          graph.connect(a, b, connectionData.name(), time);
 
-            Line connectionLine = new Line(a.getCoordX(), a.getCoordY(), b.getCoordX(), b.getCoordY());
-            connectionLine.setStroke(Color.BLACK);
-            connectionLine.setStrokeWidth(3);
-            viewPane.getChildren().add(connectionLine);
+          Line connectionLine = new Line(a.getCoordX(), a.getCoordY(), b.getCoordX(), b.getCoordY());
+          connectionLine.setStroke(Color.BLACK);
+          connectionLine.setStrokeWidth(3);
+          viewPane.getChildren().add(connectionLine);
+
+          changes = 1;
 
         } catch (NumberFormatException ex) {
             ShowErrorTab("Please enter a number in the time textbox.");
         }
 
-    });
+      });
 
     });
   }
 
-  private record ConnectionData(String name, String time) {}
+  //Hjälpmetoder
+
+  private void setMap(Stage stage, Image image, ImageView imgView) {
+    imgView.setImage(image);
+    stage.setMaxWidth(image.getWidth() + 16);
+    stage.setMaxHeight(image.getHeight() + 99);
+    stage.setWidth(image.getWidth() + 16);
+    stage.setHeight(image.getHeight() + 99);
+    imgView.setFitWidth(image.getWidth());
+
+    changes = 1;
+  }
+
+  private void createLocation(String name, double coordX, double coordY, Graph<Node> graph, ArrayList<Circle> selected, Pane viewPane) {
+    Node loc = new Node(name, coordX, coordY);
+    graph.add(loc);
+
+    Circle location = new Circle();
+    location.setCenterX(coordX);
+    location.setCenterY(coordY);
+    location.setRadius(10.0f);
+    location.setFill(Color.RED);
+    location.managedProperty().set(false);
+    location.setUserData(loc);
+
+    Label locationName = new Label(name);
+    locationName.setFont(Font.font("Helvetica", FontWeight.BOLD,14));
+    locationName.relocate(coordX, coordY + 5);
+    viewPane.getChildren().addAll(location, locationName);
+
+    location.setOnMouseClicked(selectHandler -> {
+      if (selected.size() <= 2) {
+        if (selected.contains(location)) {
+          location.setFill(Color.RED);
+          selected.remove(location);
+        } else if (!selected.contains(location) && selected.size() < 2) {
+          location.setFill(Color.BLUE);
+          selected.add(location);
+        }
+      }
+    });
+  }
+
+  private void createConnection(Node a, Node b, String name, int time, Graph<Node> graph, Pane viewPane) {
+    graph.connect(a, b, name, time);
+
+    Line connectionLine = new Line(a.getCoordX(), a.getCoordY(), b.getCoordX(), b.getCoordY());
+    connectionLine.setStroke(Color.BLACK);
+    connectionLine.setStrokeWidth(3);
+    viewPane.getChildren().add(connectionLine);
+  }
 
   private void ShowErrorTab(String message){
-
     Alert alert = new Alert(Alert.AlertType.ERROR);
     alert.setTitle("ERROR");
     alert.setHeaderText(null);
     alert.setContentText(message);
     alert.showAndWait();
-
   }
+
+  //Mainmetod
 
   public static void main(String[] args) {
     launch(args);
