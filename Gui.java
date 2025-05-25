@@ -358,10 +358,13 @@ public class Gui extends Application {
 
       if (graph.pathExists(a, b)){
 
+        boolean foundConnection = false;
+
         for (Edge<Node> edge : graph.getEdgesFrom(a)){
 
           if (edge.getDestination().equals(b)){
 
+            foundConnection = true;
             Dialog<Void> dialog = new Dialog<>();
             dialog.setTitle("Connection");
             dialog.setHeaderText(String.format("Connection from %s to %s", a.getName(), b.getName()));
@@ -393,10 +396,14 @@ public class Gui extends Application {
             dialog.showAndWait();
             return;
 
-          }else ShowErrorTab("Connection not found");
+          }
 
         }
 
+        if (!foundConnection){
+          ShowErrorTab("Connection not found");
+          return;
+        }
       }else {
         ShowErrorTab(String.format("There is no connection between %s and %s.", a.getName(), b.getName()));
         return;
@@ -454,7 +461,7 @@ public class Gui extends Application {
             });
 
             dialog.showAndWait();
-            
+
             for (Edge<Node> otherEdge : graph.getEdgesFrom(b)){
 
               if (otherEdge.destination.equals(a)){
