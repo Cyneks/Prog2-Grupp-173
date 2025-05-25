@@ -301,17 +301,17 @@ public class Gui extends Application {
       TextField timeField = new TextField();
       //timeField.setPromptText("Time");
 
-      GridPane grid = new GridPane();
-      grid.setHgap(10);
-      grid.setVgap(10);
-      grid.setPadding(new Insets(10, 80, 10, 80));
+      GridPane pane = new GridPane();
+      pane.setHgap(10);
+      pane.setVgap(10);
+      pane.setPadding(new Insets(10, 80, 10, 80));
 
-      grid.add(new Label("Name:"), 0, 0);
-      grid.add(nameField, 1, 0);
-      grid.add(new Label("Time:"), 0, 1);
-      grid.add(timeField, 1, 1);
+      pane.add(new Label("Name:"), 0, 0);
+      pane.add(nameField, 1, 0);
+      pane.add(new Label("Time:"), 0, 1);
+      pane.add(timeField, 1, 1);
 
-      dialog.getDialogPane().setContent(grid);
+      dialog.getDialogPane().setContent(pane);
 
       dialog.setResultConverter(dialogButton -> {
         if (dialogButton == okButtonType) {
@@ -362,7 +362,6 @@ public class Gui extends Application {
 
           if (edge.getDestination().equals(b)){
 
-            System.out.println(String.format("Information about path: Name = %s and Time = %s: ", edge.name, edge.weight));
             Dialog<Void> dialog = new Dialog<>();
             dialog.setTitle("Connection");
             dialog.setHeaderText(String.format("Connection from %s to %s", a.getName(), b.getName()));
@@ -398,7 +397,80 @@ public class Gui extends Application {
 
         }
 
-      }else ShowErrorTab(String.format("There is no connection between %s and %s.", a.getName(), b.getName()));
+      }else {
+        ShowErrorTab(String.format("There is no connection between %s and %s.", a.getName(), b.getName()));
+        return;
+      }
+
+    });
+
+    changeConnectionButton.setOnAction(e -> {
+
+      if (selected.size() != 2){
+        ShowErrorTab("Two places must be selected!");
+        return;
+      }
+
+      Node a = (Node) selected.get(0).getUserData();
+      Node b = (Node) selected.get(1).getUserData();
+
+      if (graph.pathExists(a, b)){
+
+        for (Edge<Node> edge : graph.getEdgesFrom(a)){
+
+          if (edge.destination.equals(b)){
+
+            Dialog<ConnectionData> dialog = new Dialog<>();
+            dialog.setTitle("Connection");
+            dialog.setHeaderText(String.format("Connection from %s to %s", a.getName(), b.getName()));
+
+            ButtonType okButton = new ButtonType("OK", ButtonBar.ButtonData.OK_DONE);
+            dialog.getDialogPane().getButtonTypes().addAll(okButton, ButtonType.CANCEL);
+
+            GridPane pane = new GridPane();
+
+            pane.setHgap(6);
+            pane.setVgap(10);
+
+            pane.setPadding(new Insets(10, 80, 10, 80));
+
+            TextField nameField = new TextField(edge.name);
+            nameField.setEditable(false);
+
+            TextField timeField = new TextField();
+
+            pane.add(new Label("Name:"), 0, 0);
+            pane.add(nameField, 1, 0);
+            pane.add(new Label("Time:"), 0, 1);
+            pane.add(timeField, 1, 1);
+
+            dialog.getDialogPane().setContent(pane);
+
+            dialog.setResultConverter(buttonType ->{
+              if (buttonType == okButton){
+                edge.setWeight(Integer.parseInt(timeField.getText()));
+              }
+              return null;
+            });
+
+            dialog.showAndWait();
+            
+            for (Edge<Node> otherEdge : graph.getEdgesFrom(b)){
+
+              if (otherEdge.destination.equals(a)){
+                otherEdge.setWeight(Integer.parseInt(timeField.getText()));
+              }
+
+            }
+
+          }
+
+        }
+
+      }else {
+        ShowErrorTab(String.format("There is no connection between %s and %s.", a.getName(), b.getName()));
+        return;
+      }
 
     });
 
