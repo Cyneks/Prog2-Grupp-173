@@ -1,10 +1,17 @@
-package se.su.inlupp;
+//package se.su.inlupp;
 
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Optional;
+
 import javafx.application.Application;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -42,6 +49,8 @@ public class Gui extends Application {
   private int changes;
 
   private record ConnectionData(String name, String time) {}
+
+  private HashMap<String, String> connectionDataMap = new HashMap<>();
 
   public void start(Stage stage) {
     Graph<Node> graph = new ListGraph<Node>();
@@ -297,7 +306,7 @@ public class Gui extends Application {
       GridPane grid = new GridPane();
       grid.setHgap(10);
       grid.setVgap(10);
-      grid.setPadding(new Insets(20, 150, 10, 10));
+      grid.setPadding(new Insets(10, 80, 10, 80));
 
       grid.add(new Label("Name:"), 0, 0);
       grid.add(nameField, 1, 0);
@@ -308,6 +317,9 @@ public class Gui extends Application {
 
       dialog.setResultConverter(dialogButton -> {
         if (dialogButton == okButtonType) {
+            //String name = nameField.getText();
+            //ConnectionData nameOfConnection = new ConnectionData(nameField.getText(), timeField.getText());
+            //connectionDataMap.put(nameField.getText(), new ConnectionData(nameField.getText(), timeField.getText()));
             return new ConnectionData(nameField.getText(), timeField.getText());
         }
         return null;
@@ -328,6 +340,7 @@ public class Gui extends Application {
           viewPane.getChildren().add(connectionLine);
 
           changes = 1;
+          connectionDataMap.put(nameField.getText(), timeField.getText());
 
         } catch (NumberFormatException ex) {
             ShowErrorTab("Please enter a number in the time textbox.");
@@ -336,6 +349,65 @@ public class Gui extends Application {
       });
 
     });
+
+    showConnectionButton.setOnAction(e -> {
+
+      if (selected.size() != 2){
+
+        ShowErrorTab("You need to select two places!");
+        return;
+
+      }
+
+      Node a = (Node) selected.get(0).getUserData();
+      Node b = (Node) selected.get(1).getUserData();
+
+      if (graph.pathExists(a, b)){
+
+        for (Edge<Node> edge : graph.getEdgesFrom(a)){
+
+          if (edge.getDestination().equals(b)){
+
+            System.out.println(String.format("Information about path: Name = %s and Time = %s: ", edge.name, edge.weight));
+            Dialog<Void> dialog = new Dialog<>();
+            dialog.setTitle("Connection");
+            dialog.setHeaderText(String.format("Connection from %s to %s", a.getName(), b.getName()));
+
+            ButtonType okButton = new ButtonType("OK", ButtonBar.ButtonData.OK_DONE);
+            ButtonType cancelButton = new ButtonType("Cancel", ButtonBar.ButtonData.CANCEL_CLOSE);
+
+            dialog.getDialogPane().getButtonTypes().addAll(okButton, cancelButton);
+
+            GridPane pane = new GridPane();
+
+            pane.setHgap(6);
+            pane.setVgap(10);
+
+            pane.setPadding(new Insets(10, 80, 10, 80));
+
+            TextField nameField = new TextField(edge.name);
+            nameField.setEditable(false);
+            
+            TextField timeField = new TextField(String.valueOf(edge.weight));
+            timeField.setEditable(false);
+
+            pane.add(new Label("Name:"), 0, 0);
+            pane.add(nameField, 1, 0);
+            pane.add(new Label("Time:"), 0, 1);
+            pane.add(timeField, 1, 1);
+
+            dialog.getDialogPane().setContent(pane);
+            dialog.showAndWait();
+            return;
+
+          }else ShowErrorTab("Connection not found");
+
+        }
+
+      }else ShowErrorTab(String.format("There is no connection between %s and %s.", a.getName(), b.getName()));
+
+    });
+
   }
 
   //Hjälpmetoder
