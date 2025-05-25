@@ -20,12 +20,14 @@ import javafx.scene.Scene;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.ButtonBar;
+import javafx.scene.control.ButtonBar.ButtonData;
 import javafx.scene.control.ButtonType;
 import javafx.scene.control.Dialog;
 import javafx.scene.control.Label;
 import javafx.scene.control.Menu;
 import javafx.scene.control.MenuBar;
 import javafx.scene.control.MenuItem;
+import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
 import javafx.scene.control.TextInputDialog;
 import javafx.scene.image.Image;
@@ -476,6 +478,49 @@ public class Gui extends Application {
 
       }else {
         ShowErrorTab(String.format("There is no connection between %s and %s.", a.getName(), b.getName()));
+        return;
+      }
+
+    });
+
+    findPathButton.setOnAction(e -> {
+
+      if (selected.size() != 2){
+        ShowErrorTab("Two places must be selected!");
+        return;
+      }
+
+      Node a = (Node) selected.get(0).getUserData();
+      Node b = (Node) selected.get(1).getUserData();
+
+      if (graph.getPath(a, b) != null){
+
+        StringBuilder sb = new StringBuilder();
+
+        Dialog<Void> dialog = new Dialog<>();
+        dialog.setTitle("Message");
+        dialog.setHeaderText(String.format("The Path from %s to %s:", a.getName(), b.getName()));
+
+        GridPane pane = new GridPane();
+
+        TextArea travelInformation = new TextArea();
+
+        ButtonType okButton = new ButtonType("OK", ButtonData.OK_DONE);
+        dialog.getDialogPane().getButtonTypes().add(okButton);
+        
+        for (Edge<Node> edge : graph.getPath(a, b)){
+          sb.append(String.format("to %s by %s takes %s", edge.destination, edge.name, edge.weight)).append("\n");
+        }
+
+        travelInformation.setText(sb.toString());
+
+        pane.add(travelInformation, 0 ,0);
+
+        dialog.getDialogPane().setContent(pane);
+        dialog.showAndWait();
+
+      }else {
+        ShowErrorTab(String.format("There is no path from %s to %s.", a.getName(), b.getName()));
         return;
       }
 
