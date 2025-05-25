@@ -50,8 +50,6 @@ public class Gui extends Application {
 
   private record ConnectionData(String name, String time) {}
 
-  private HashMap<String, String> connectionDataMap = new HashMap<>();
-
   public void start(Stage stage) {
     Graph<Node> graph = new ListGraph<Node>();
     ArrayList<Circle> selected = new ArrayList<>();
@@ -317,9 +315,6 @@ public class Gui extends Application {
 
       dialog.setResultConverter(dialogButton -> {
         if (dialogButton == okButtonType) {
-            //String name = nameField.getText();
-            //ConnectionData nameOfConnection = new ConnectionData(nameField.getText(), timeField.getText());
-            //connectionDataMap.put(nameField.getText(), new ConnectionData(nameField.getText(), timeField.getText()));
             return new ConnectionData(nameField.getText(), timeField.getText());
         }
         return null;
@@ -340,7 +335,6 @@ public class Gui extends Application {
           viewPane.getChildren().add(connectionLine);
 
           changes = 1;
-          connectionDataMap.put(nameField.getText(), timeField.getText());
 
         } catch (NumberFormatException ex) {
             ShowErrorTab("Please enter a number in the time textbox.");
