@@ -1,5 +1,6 @@
-//package se.su.inlupp;
+package se.su.inlupp;
 
+import java.awt.image.BufferedImage;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
@@ -13,10 +14,15 @@ import java.util.HashMap;
 import java.util.Optional;
 
 import javafx.application.Application;
+import javafx.application.Platform;
+import javafx.embed.swing.SwingFXUtils;
+import javafx.event.ActionEvent;
+import javafx.event.EventHandler;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Cursor;
 import javafx.scene.Scene;
+import javafx.scene.SnapshotParameters;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.ButtonBar;
@@ -32,6 +38,7 @@ import javafx.scene.control.TextField;
 import javafx.scene.control.TextInputDialog;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
+import javafx.scene.image.WritableImage;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
@@ -43,6 +50,8 @@ import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
+
+import javax.imageio.ImageIO;
 
 public class Gui extends Application {
   private String imageFile;
@@ -212,6 +221,39 @@ public class Gui extends Application {
       }
     });
 
+    saveImageButton.setOnAction(e -> {
+      try {
+        WritableImage image = viewPane.snapshot(null, null);
+        BufferedImage bufferedImage = SwingFXUtils.fromFXImage(image, null);
+        File outputFile = new File("capture.png");
+        ImageIO.write(bufferedImage, "png", outputFile);
+
+        Alert alert = new Alert(Alert.AlertType.INFORMATION);
+        alert.setHeaderText("Image saved");
+        alert.showAndWait();
+
+      } catch (IOException ex) {
+        Alert alert = new Alert(Alert.AlertType.ERROR, "IO Error"+ex.getMessage());
+        alert.showAndWait();
+      }
+    });
+//Exit
+    exitButton.setOnAction(e -> {
+      if (changes == 1) {
+        Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
+        alert.setTitle("Warning!");
+        alert.setHeaderText("Unsaved changes, continue anyway?");
+        ((Button) alert.getDialogPane().lookupButton(ButtonType.CANCEL)).setText("Cancel");
+
+        Optional<ButtonType> result = alert.showAndWait();
+        if (result.isPresent() && result.get() == ButtonType.OK) {
+          Platform.exit();
+        }
+      } else {
+        Platform.exit();
+      }
+    });
+
     //Knappar
     newPlaceButton.setOnAction(e -> {
       newPlaceButton.setDisable(true);
@@ -317,7 +359,7 @@ public class Gui extends Application {
 
       dialog.setResultConverter(dialogButton -> {
         if (dialogButton == okButtonType) {
-            return new ConnectionData(nameField.getText(), timeField.getText());
+          return new ConnectionData(nameField.getText(), timeField.getText());
         }
         return null;
       });
@@ -339,7 +381,7 @@ public class Gui extends Application {
           changes = 1;
 
         } catch (NumberFormatException ex) {
-            ShowErrorTab("Please enter a number in the time textbox.");
+          ShowErrorTab("Please enter a number in the time textbox.");
         }
 
       });
@@ -385,7 +427,7 @@ public class Gui extends Application {
 
             TextField nameField = new TextField(edge.name);
             nameField.setEditable(false);
-            
+
             TextField timeField = new TextField(String.valueOf(edge.weight));
             timeField.setEditable(false);
 
@@ -507,7 +549,7 @@ public class Gui extends Application {
 
         ButtonType okButton = new ButtonType("OK", ButtonData.OK_DONE);
         dialog.getDialogPane().getButtonTypes().add(okButton);
-        
+
         for (Edge<Node> edge : graph.getPath(a, b)){
           sb.append(String.format("to %s by %s takes %s", edge.destination, edge.name, edge.weight)).append("\n");
         }
