@@ -9,20 +9,15 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.net.MalformedURLException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Optional;
+import java.util.*;
 
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.embed.swing.SwingFXUtils;
-import javafx.event.ActionEvent;
-import javafx.event.EventHandler;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Cursor;
 import javafx.scene.Scene;
-import javafx.scene.SnapshotParameters;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.ButtonBar;
@@ -57,12 +52,12 @@ public class Gui extends Application {
   private String imageFile;
 
   //Om changes = 0, inga ändringar har skett som måste sparas. Om changes = 1, ändrignar har skett som bör sparas.
-  private int changes;
+  private int changes = 0;
 
   private record ConnectionData(String name, String time) {}
 
   public void start(Stage stage) {
-    Graph<Node> graph = new ListGraph<Node>();
+    Graph<Node> graph = new ListGraph<>();
     ArrayList<Circle> selected = new ArrayList<>();
 
     stage.setWidth(525);
@@ -105,6 +100,20 @@ public class Gui extends Application {
 
     //Meny
     newMapButton.setOnAction(e -> {
+      if (changes == 1) {
+        Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
+        alert.setTitle("Warning!");
+        alert.setHeaderText("Unsaved changes, continue anyway?");
+        ((Button) alert.getDialogPane().lookupButton(ButtonType.CANCEL)).setText("Cancel");
+
+        Optional<ButtonType> result = alert.showAndWait();
+        if (result.isPresent() && result.get() == ButtonType.CANCEL) {
+          return;
+        }
+      }
+
+      clearProgram(graph, selected, viewPane, imgView);
+
       FileChooser fileChooser = new FileChooser();
       fileChooser.getExtensionFilters().addAll(
               new FileChooser.ExtensionFilter("GIF", "*.gif"),
@@ -112,76 +121,92 @@ public class Gui extends Application {
               new FileChooser.ExtensionFilter("JPG", "*.jpg"),
               new FileChooser.ExtensionFilter("JPEG", "*.jpeg")
       );
+
       File map = fileChooser.showOpenDialog(stage);
-      imageFile = map.getPath();
 
-      try {
-        Image image = new Image(map.toURI().toURL().toString());
+      if (map != null) {
+        imageFile = map.getPath();
 
-        setMap(stage, image, imgView);
+        try {
+          Image image = new Image(map.toURI().toURL().toString());
 
-        //imgView.setImage(image);
+          setMap(stage, image, imgView);
 
-        //stage.setMaxWidth(image.getWidth() + 16);
-        //stage.setMaxHeight(image.getHeight() + 99);
-        //stage.setWidth(image.getWidth() + 16);
-        //stage.setHeight(image.getHeight() + 99);
-        //imgView.setFitWidth(image.getWidth());
-      } catch(MalformedURLException ex) {
-        ex.printStackTrace();
+          changes = 0;
+        } catch(MalformedURLException ex) {
+          showErrorTab("Error has ocurred, please try again");
+        }
       }
     });
 
     openButton.setOnAction(e -> {
+      if (changes == 1) {
+        Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
+        alert.setTitle("Warning!");
+        alert.setHeaderText("Unsaved changes, continue anyway?");
+        ((Button) alert.getDialogPane().lookupButton(ButtonType.CANCEL)).setText("Cancel");
+
+        Optional<ButtonType> result = alert.showAndWait();
+        if (result.isPresent() && result.get() == ButtonType.CANCEL) {
+          return;
+        }
+      }
+
+      clearProgram(graph, selected, viewPane, imgView);
+
       HashMap<String, Node> nodes = new HashMap<>();
 
       FileChooser fileChooser = new FileChooser();
       fileChooser.getExtensionFilters().addAll(new FileChooser.ExtensionFilter("Graph", "*.graph"));
       File file = fileChooser.showOpenDialog(stage);
 
-      try (BufferedReader br = new BufferedReader(new FileReader(file))) {
-        String image = br.readLine();
-        String[] path = image.split(":");
-        if (path.length == 2) {
-          imageFile = path[1];
-        } else {
-          imageFile = path[1] + ":" + path[2];
-        }
-        setMap(stage, new Image(image), imgView);
-
-        String line = br.readLine();
-        String[] parts = line.split(";");
-
-        String name;
-        double coordX;
-        double coordY;
-        for(int i = 0; i < parts.length; i += 3) {
-          name = parts[i];
-          coordX = Double.valueOf(parts[i + 1]);
-          coordY = Double.valueOf(parts[i + 2]);
-
-          createLocation(name, coordX, coordY, graph, selected, viewPane);
-
-          Node place = new Node(name, coordX, coordY);
-          nodes.put(parts[i], place);
-        }
-
-        while ((line = br.readLine()) != null) {
-          parts = line.split(";");
-
-          String from = parts[0];
-          String to = parts[1];
-          String method = parts[2];
-          int time = Integer.valueOf(parts[3]);
-
-          if (!graph.pathExists(nodes.get(from), nodes.get(to))) {
-            createConnection(nodes.get(from), nodes.get(to), method, time, graph, viewPane);
+      if (file != null) {
+        try (BufferedReader br = new BufferedReader(new FileReader(file))) {
+          String image = br.readLine();
+          String[] path = image.split(":");
+          if (path.length == 2) {
+            imageFile = path[1];
+          } else {
+            imageFile = path[1] + ":" + path[2];
           }
+          setMap(stage, new Image(image), imgView);
+
+          String line = br.readLine();
+          String[] parts = line.split(";");
+
+          String name;
+          double coordX;
+          double coordY;
+          for(int i = 0; i < parts.length; i += 3) {
+            name = parts[i];
+            coordX = Double.parseDouble(parts[i + 1]);
+            coordY = Double.parseDouble(parts[i + 2]);
+
+            createLocation(name, coordX, coordY, graph, selected, viewPane);
+
+            Node place = new Node(name, coordX, coordY);
+            nodes.put(parts[i], place);
+          }
+
+          while ((line = br.readLine()) != null) {
+            parts = line.split(";");
+
+            String from = parts[0];
+            String to = parts[1];
+            String method = parts[2];
+            int time = Integer.parseInt(parts[3]);
+
+            if (!graph.pathExists(nodes.get(from), nodes.get(to))) {
+              createConnection(nodes.get(from), nodes.get(to), method, time, graph, viewPane);
+            }
+          }
+
+          changes = 0;
+        } catch (FileNotFoundException ex) {
+          showErrorTab("File not found");
+        } catch (IOException ex) {
+          showErrorTab("Error has ocurred, please try again");
         }
-      } catch (FileNotFoundException ex) {
-        ex.printStackTrace();
-      } catch (IOException ex) {
-        ex.printStackTrace();
       }
     });
 
@@ -191,33 +216,35 @@ public class Gui extends Application {
         saver.getExtensionFilters().addAll(new FileChooser.ExtensionFilter("Graph", "*.graph"));
         File file = saver.showSaveDialog(stage);
 
-        try (BufferedWriter buffer = new BufferedWriter(new FileWriter(file))) {
-          StringBuilder graphInfo = new StringBuilder();
+        if (file != null) {
+          try (BufferedWriter buffer = new BufferedWriter(new FileWriter(file))) {
+            StringBuilder graphInfo = new StringBuilder();
 
-          graphInfo.append("file:").append(imageFile).append("\n");
-          for (Node node : graph.getNodes()) {
-            graphInfo.append(node.getName()).append(";").append(node.getCoordX()).append(";").append(node.getCoordY()).append(";");
-          }
-
-          graphInfo.setLength(graphInfo.length() - 1);
-          graphInfo.append("\n");
-
-          for (Node node : graph.getNodes()) {
-            for (Edge<Node> edge : graph.getEdgesFrom(node)) {
-              graphInfo.append(node.getName()).append(";").append(edge.getDestination()).append(";").append(edge.getName()).append(";").append(edge.getWeight()).append("\n");
+            graphInfo.append("file:").append(imageFile).append("\n");
+            for (Node node : graph.getNodes()) {
+              graphInfo.append(node.getName()).append(";").append(node.getCoordX()).append(";").append(node.getCoordY()).append(";");
             }
+
+            graphInfo.setLength(graphInfo.length() - 1);
+            graphInfo.append("\n");
+
+            for (Node node : graph.getNodes()) {
+              for (Edge<Node> edge : graph.getEdgesFrom(node)) {
+                graphInfo.append(node.getName()).append(";").append(edge.getDestination()).append(";").append(edge.getName()).append(";").append(edge.getWeight()).append("\n");
+              }
+            }
+
+            graphInfo.setLength(graphInfo.length() - 1);
+
+            buffer.write(graphInfo.toString());
+
+            changes = 0;
+          } catch (IOException ex) {
+            showErrorTab("Error has ocurred, please try again");
           }
-
-          graphInfo.setLength(graphInfo.length() - 1);
-
-          buffer.write(graphInfo.toString());
-        } catch (IOException ex) {
-          ex.printStackTrace();
         }
-
-        changes = 0;
       } else {
-        ShowErrorTab("No changes to save");
+        showErrorTab("No changes to save");
       }
     });
 
@@ -237,12 +264,12 @@ public class Gui extends Application {
         alert.showAndWait();
       }
     });
-//Exit
+
     exitButton.setOnAction(e -> {
       if (changes == 1) {
         Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
         alert.setTitle("Warning!");
-        alert.setHeaderText("Unsaved changes, continue anyway?");
+        alert.setHeaderText("Unsaved changes, exit anyway?");
         ((Button) alert.getDialogPane().lookupButton(ButtonType.CANCEL)).setText("Cancel");
 
         Optional<ButtonType> result = alert.showAndWait();
@@ -268,33 +295,6 @@ public class Gui extends Application {
         Optional<String> result = input.showAndWait();
         if (result.isPresent()) {
           createLocation(result.get(), locationHandler.getX(), locationHandler.getY(), graph, selected, viewPane);
-          //Node loc = new Node(result.get(), locationHandler.getX(), locationHandler.getY());
-          //graph.add(loc);
-
-          //Circle location = new Circle();
-          //location.setCenterX(locationHandler.getX());
-          //location.setCenterY(locationHandler.getY());
-          //location.setRadius(10.0f);
-          //location.setFill(Color.RED);
-          //location.managedProperty().set(false);
-          //location.setUserData(loc);
-
-          //Label locationName = new Label(result.get());
-          //locationName.setFont(Font.font("Helvetica", FontWeight.BOLD,14));
-          //locationName.relocate(locationHandler.getX(), locationHandler.getY() + 5);
-          //viewPane.getChildren().addAll(location, locationName);
-
-          //location.setOnMouseClicked(selectHandler -> {
-          //  if (selected.size() <= 2) {
-          //    if (selected.contains(location)) {
-          //      location.setFill(Color.RED);
-          //      selected.remove(location);
-          //    } else if (!selected.contains(location) && selected.size() < 2) {
-          //      location.setFill(Color.BLUE);
-          //      selected.add(location);
-          //    }
-          //  }
-          //});
 
           changes = 1;
         }
@@ -308,7 +308,7 @@ public class Gui extends Application {
 
     newConnectionButton.setOnAction(e -> {
       if (selected.size() != 2){
-        ShowErrorTab("You need to select two locations");
+        showErrorTab("You need to select two locations");
         return;
       }
 
@@ -316,9 +316,9 @@ public class Gui extends Application {
       Node b = (Node) selected.get(1).getUserData();
 
       if (graph.pathExists(a, b)) {
-        ShowErrorTab(String.format("A connection between %s and %s already exists", a.getName(), b.getName()));
+        showErrorTab(String.format("A connection between %s and %s already exists", a.getName(), b.getName()));
         return;
-      };
+      }
 
       // TextInputDialog connectionDialog = new TextInputDialog();
       // connectionDialog.setHeaderText(String.format("Connection from %s to %s", a.getName(), b.getName()));
@@ -368,7 +368,6 @@ public class Gui extends Application {
 
       result.ifPresent(connectionData -> {
         try {
-
           int time = Integer.parseInt(connectionData.time());
 
           graph.connect(a, b, connectionData.name(), time);
@@ -379,34 +378,26 @@ public class Gui extends Application {
           viewPane.getChildren().add(connectionLine);
 
           changes = 1;
-
         } catch (NumberFormatException ex) {
-          ShowErrorTab("Please enter a number in the time textbox.");
+          showErrorTab("Please enter a number in the time textbox.");
         }
-
       });
-
     });
 
     showConnectionButton.setOnAction(e -> {
-
-      if (selected.size() != 2){
-
-        ShowErrorTab("You need to select two places!");
+      if (selected.size() != 2) {
+        showErrorTab("You need to select two places!");
         return;
-
       }
 
       Node a = (Node) selected.get(0).getUserData();
       Node b = (Node) selected.get(1).getUserData();
 
-      if (graph.pathExists(a, b)){
-
+      if (graph.pathExists(a, b)) {
         boolean foundConnection = false;
 
-        for (Edge<Node> edge : graph.getEdgesFrom(a)){
-
-          if (edge.getDestination().equals(b)){
+        for (Edge<Node> edge : graph.getEdgesFrom(a)) {
+          if (edge.getDestination().equals(b)) {
 
             foundConnection = true;
             Dialog<Void> dialog = new Dialog<>();
@@ -439,37 +430,29 @@ public class Gui extends Application {
             dialog.getDialogPane().setContent(pane);
             dialog.showAndWait();
             return;
-
           }
-
         }
 
-        if (!foundConnection){
-          ShowErrorTab("Connection not found");
-          return;
+        if (!foundConnection) {
+          showErrorTab("Connection not found");
         }
-      }else {
-        ShowErrorTab(String.format("There is no connection between %s and %s.", a.getName(), b.getName()));
-        return;
+      } else {
+        showErrorTab(String.format("There is no connection between %s and %s.", a.getName(), b.getName()));
       }
-
     });
 
     changeConnectionButton.setOnAction(e -> {
-
-      if (selected.size() != 2){
-        ShowErrorTab("Two places must be selected!");
+      if (selected.size() != 2) {
+        showErrorTab("Two places must be selected!");
         return;
       }
 
       Node a = (Node) selected.get(0).getUserData();
       Node b = (Node) selected.get(1).getUserData();
 
-      if (graph.pathExists(a, b)){
-
-        for (Edge<Node> edge : graph.getEdgesFrom(a)){
-
-          if (edge.destination.equals(b)){
+      if (graph.pathExists(a, b)) {
+        for (Edge<Node> edge : graph.getEdgesFrom(a)) {
+          if (edge.destination.equals(b)) {
 
             Dialog<ConnectionData> dialog = new Dialog<>();
             dialog.setTitle("Connection");
@@ -497,8 +480,8 @@ public class Gui extends Application {
 
             dialog.getDialogPane().setContent(pane);
 
-            dialog.setResultConverter(buttonType ->{
-              if (buttonType == okButton){
+            dialog.setResultConverter(buttonType -> {
+              if (buttonType == okButton) {
                 edge.setWeight(Integer.parseInt(timeField.getText()));
               }
               return null;
@@ -506,37 +489,30 @@ public class Gui extends Application {
 
             dialog.showAndWait();
 
-            for (Edge<Node> otherEdge : graph.getEdgesFrom(b)){
-
-              if (otherEdge.destination.equals(a)){
+            for (Edge<Node> otherEdge : graph.getEdgesFrom(b)) {
+              if (otherEdge.destination.equals(a)) {
                 otherEdge.setWeight(Integer.parseInt(timeField.getText()));
               }
-
             }
 
+            changes = 1;
           }
-
         }
-
-      }else {
-        ShowErrorTab(String.format("There is no connection between %s and %s.", a.getName(), b.getName()));
-        return;
+      } else {
+        showErrorTab(String.format("There is no connection between %s and %s.", a.getName(), b.getName()));
       }
-
     });
 
     findPathButton.setOnAction(e -> {
-
       if (selected.size() != 2){
-        ShowErrorTab("Two places must be selected!");
+        showErrorTab("Two places must be selected!");
         return;
       }
 
       Node a = (Node) selected.get(0).getUserData();
       Node b = (Node) selected.get(1).getUserData();
 
-      if (graph.getPath(a, b) != null){
-
+      if (graph.getPath(a, b) != null) {
         StringBuilder sb = new StringBuilder();
 
         Dialog<Void> dialog = new Dialog<>();
@@ -550,7 +526,7 @@ public class Gui extends Application {
         ButtonType okButton = new ButtonType("OK", ButtonData.OK_DONE);
         dialog.getDialogPane().getButtonTypes().add(okButton);
 
-        for (Edge<Node> edge : graph.getPath(a, b)){
+        for (Edge<Node> edge : graph.getPath(a, b)) {
           sb.append(String.format("to %s by %s takes %s", edge.destination, edge.name, edge.weight)).append("\n");
         }
 
@@ -561,13 +537,10 @@ public class Gui extends Application {
         dialog.getDialogPane().setContent(pane);
         dialog.showAndWait();
 
-      }else {
-        ShowErrorTab(String.format("There is no path from %s to %s.", a.getName(), b.getName()));
-        return;
+      } else {
+        showErrorTab(String.format("There is no path from %s to %s.", a.getName(), b.getName()));
       }
-
     });
-
   }
 
   //Hjälpmetoder
@@ -579,8 +552,6 @@ public class Gui extends Application {
     stage.setWidth(image.getWidth() + 16);
     stage.setHeight(image.getHeight() + 99);
     imgView.setFitWidth(image.getWidth());
-
-    changes = 1;
   }
 
   private void createLocation(String name, double coordX, double coordY, Graph<Node> graph, ArrayList<Circle> selected, Pane viewPane) {
@@ -622,12 +593,26 @@ public class Gui extends Application {
     viewPane.getChildren().add(connectionLine);
   }
 
-  private void ShowErrorTab(String message){
+  private void showErrorTab(String message){
     Alert alert = new Alert(Alert.AlertType.ERROR);
     alert.setTitle("ERROR");
     alert.setHeaderText(null);
     alert.setContentText(message);
     alert.showAndWait();
+  }
+
+  private void clearProgram(Graph<Node> graph, ArrayList<Circle> selected, Pane viewPane, ImageView imgView) {
+    Set<Node> oldNodes = graph.getNodes();
+
+    ArrayList<Node> toRemove = new ArrayList<>(oldNodes);
+
+    for (Node node : toRemove) {
+      graph.remove(node);
+    }
+
+    selected.clear();
+    viewPane.getChildren().clear();
+    viewPane.getChildren().add(imgView);
   }
 
   //Mainmetod
