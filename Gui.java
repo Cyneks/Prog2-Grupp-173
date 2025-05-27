@@ -320,18 +320,6 @@ public class Gui extends Application {
         return;
       }
 
-      // TextInputDialog connectionDialog = new TextInputDialog();
-      // connectionDialog.setHeaderText(String.format("Connection from %s to %s", a.getName(), b.getName()));
-      // connectionDialog.setTitle("Connection");
-      // connectionDialog.setContentText("Name:");
-
-      //Optional<String> result = connectionDialog.showAndWait();
-      // if (result.isPresent()){
-
-
-
-      // }
-
       Dialog<ConnectionData> dialog = new Dialog<>();
       dialog.setTitle("Connection");
       dialog.setHeaderText(String.format("Connection from %s to %s", a.getName(), b.getName()));
@@ -340,10 +328,8 @@ public class Gui extends Application {
       dialog.getDialogPane().getButtonTypes().addAll(okButtonType, ButtonType.CANCEL);
 
       TextField nameField = new TextField();
-      //nameField.setPromptText("Name");
 
       TextField timeField = new TextField();
-      //timeField.setPromptText("Time");
 
       GridPane pane = new GridPane();
       pane.setHgap(10);
