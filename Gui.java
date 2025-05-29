@@ -55,21 +55,26 @@ import javafx.stage.Stage;
 import javax.imageio.ImageIO;
 
 public class Gui extends Application {
+  // Sträng med path till bildfilen så att den kan användas i andra lambdauttryck
   private String imageFile;
 
-  //Om changes = 0, inga ändringar har skett som måste sparas. Om changes = 1, ändrignar har skett som bör sparas.
+  // Om changes = 0, inga ändringar har skett som måste sparas. Om changes = 1, ändrignar har skett som bör sparas
   private int changes = 0;
 
   private record ConnectionData(String name, String time) {}
 
   public void start(Stage stage) {
     Graph<Node> graph = new ListGraph<>();
+
+    // ArrayList för valda platser (cirklar). Använder ArrayList för att kunna använda index
     ArrayList<Circle> selected = new ArrayList<>();
 
+    // Sätter formen på start-fönstret. Max-höjd på 1000 för att passa på 1920x1080 skärmar
     stage.setWidth(525);
     stage.setMaxHeight(1000);
     stage.setTitle("Pathfinder");
 
+    // Meny med flera olika menyval, stoppas sen i en MenuBar nedan
     Menu menu = new Menu("File");
     MenuItem newMapButton = new MenuItem("New Map");
     MenuItem openButton = new MenuItem("Open");
@@ -81,6 +86,7 @@ public class Gui extends Application {
     MenuBar menuBar = new MenuBar();
     menuBar.getMenus().add(menu);
 
+    // Hbox för att ordna knappar vågrätt
     HBox buttons = new HBox(5);
     buttons.setAlignment(Pos.TOP_CENTER);
     Button findPathButton = new Button("Find Path");
@@ -90,11 +96,15 @@ public class Gui extends Application {
     Button changeConnectionButton = new Button("Change Connection");
     buttons.getChildren().addAll(findPathButton, showConnectionButton, newPlaceButton, newConnectionButton, changeConnectionButton);
 
+    // ImageView som krävs för att stoppa in en bild i GUIn
     ImageView imgView = new ImageView();
     imgView.setPreserveRatio(true);
 
+    // Pane som är "arbetsytan" och håller bilden, alla platser och dess kopplingar
+    // Pane istället för exempelvis StackPane då StackPanes tvingar centrering av alla noder, inklusive cirklar osv
     Pane viewPane = new Pane(imgView);
 
+    // Vbox för att ordna menyn, knapparna och "arbetsytan" lodrätt
     VBox root = new VBox(menuBar, buttons, viewPane);
     root.setAlignment(Pos.TOP_CENTER);
     root.setSpacing(5);
@@ -106,6 +116,7 @@ public class Gui extends Application {
 
     //Meny
     newMapButton.setOnAction(e -> {
+      // Ger en confirmation-dialog ifall osparade ändringar finns
       if (changes == 1) {
         Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
         alert.setTitle("Warning!");
@@ -118,8 +129,10 @@ public class Gui extends Application {
         }
       }
 
+      // Rensar programmet på alla bilder, cirklar, linjer, rensar listan med valda cirklar och rensar grafen
       clearProgram(graph, selected, viewPane, imgView);
 
+      // Filechooser med ExtensionFilters som bara tillåter att man öppnar filer med de vanligaste bildfil-ändelserna
       FileChooser fileChooser = new FileChooser();
       fileChooser.getExtensionFilters().addAll(
               new FileChooser.ExtensionFilter("GIF", "*.gif"),
@@ -130,12 +143,16 @@ public class Gui extends Application {
 
       File map = fileChooser.showOpenDialog(stage);
 
+      // if-sats som kontrollerar ifall en fil valdes i FileChoosern
       if (map != null) {
+        // Stoppar in path till bilden i en variabel som kan återanvändas i andra metoder/lambda-uttryck
         imageFile = map.getPath();
 
         try {
+          // Då map är en file och inte en länk till en fil, skapar en länk till filen som Image-konstruktorn kan ta
           Image image = new Image(map.toURI().toURL().toString());
 
+          // Stoppar bilden i en ImageView samt formar om fönstret för att passa bilden
           setMap(stage, image, imgView);
 
           changes = 0;
@@ -158,23 +175,31 @@ public class Gui extends Application {
         }
       }
 
+      // Rensar programmet på alla bilder, cirklar, linjer, rensar listan med valda cirklar och rensar grafen.
       clearProgram(graph, selected, viewPane, imgView);
 
       HashMap<String, Node> nodes = new HashMap<>();
 
+      // Filechooser med ExtensionFilters som bara tillåter att man öppnar .graph filer
       FileChooser fileChooser = new FileChooser();
       fileChooser.getExtensionFilters().addAll(new FileChooser.ExtensionFilter("Graph", "*.graph"));
-      File file = fileChooser.showOpenDialog(stage);
+      File saveFile = fileChooser.showOpenDialog(stage);
 
-      if (file != null) {
-        try (BufferedReader br = new BufferedReader(new FileReader(file))) {
+      // if-sats som kontrollerar ifall en fil valdes i FileChoosern
+      if (saveFile != null) {
+        try (BufferedReader br = new BufferedReader(new FileReader(saveFile))) {
+          // Läser in bilden från första raden i sparfilen
           String image = br.readLine();
+
+          // Tar filnamnet/path till filen från första raden och stoppar i variabel som kan användas i andra metoder/lambda-uttryck
           String[] path = image.split(":");
           if (path.length == 2) {
             imageFile = path[1];
           } else {
             imageFile = path[1] + ":" + path[2];
           }
+
+          // Stoppar bilden i en ImageView samt formar om fönstret för att passa bilden
           setMap(stage, new Image(image), imgView);
 
           String line = br.readLine();
@@ -188,12 +213,15 @@ public class Gui extends Application {
             coordX = Double.parseDouble(parts[i + 1]);
             coordY = Double.parseDouble(parts[i + 2]);
 
+            // Skapar platser (noder i grafen + cirklar på kartan) med inläst data
             createLocation(name, coordX, coordY, graph, selected, viewPane);
 
+            // Skapar kopia och stoppar i HashMap för att kunna komma åt noden med namn
             Node place = new Node(name, coordX, coordY);
             nodes.put(parts[i], place);
           }
 
+          // Itererar genom de resterande raderna med kopplingar och skapar de kopplingarna
           while ((line = br.readLine()) != null) {
             parts = line.split(";");
 
@@ -202,7 +230,8 @@ public class Gui extends Application {
             String method = parts[2];
             int time = Integer.parseInt(parts[3]);
 
-            if (!graph.pathExists(nodes.get(from), nodes.get(to))) {
+            // Undviker att skapa dubbla kopplingar mellan platser
+            if (graph.getEdgeBetween(nodes.get(from), nodes.get(to)) == null) {
               createConnection(nodes.get(from), nodes.get(to), method, time, graph, viewPane);
             }
           }
@@ -217,40 +246,41 @@ public class Gui extends Application {
     });
 
     saveButton.setOnAction(e -> {
-      if (changes == 1) {
-        FileChooser saver = new FileChooser();
-        saver.getExtensionFilters().addAll(new FileChooser.ExtensionFilter("Graph", "*.graph"));
-        File file = saver.showSaveDialog(stage);
+      // FileChooser som skapar en fil med .graph-ändelser genom ett ExtensionFilter
+      FileChooser saver = new FileChooser();
+      saver.getExtensionFilters().addAll(new FileChooser.ExtensionFilter("Graph", "*.graph"));
+      File file = saver.showSaveDialog(stage);
 
-        if (file != null) {
-          try (BufferedWriter buffer = new BufferedWriter(new FileWriter(file))) {
-            StringBuilder graphInfo = new StringBuilder();
+      // if-sats som kontrollerar ifall en fil skapades i FileChoosern
+      if (file != null) {
+        try (BufferedWriter buffer = new BufferedWriter(new FileWriter(file))) {
+          // Bygger en sträng med StringBuilder
+          StringBuilder graphInfo = new StringBuilder();
 
-            graphInfo.append("file:").append(imageFile).append("\n");
-            for (Node node : graph.getNodes()) {
-              graphInfo.append(node.getName()).append(";").append(node.getCoordX()).append(";").append(node.getCoordY()).append(";");
-            }
-
-            graphInfo.setLength(graphInfo.length() - 1);
-            graphInfo.append("\n");
-
-            for (Node node : graph.getNodes()) {
-              for (Edge<Node> edge : graph.getEdgesFrom(node)) {
-                graphInfo.append(node.getName()).append(";").append(edge.getDestination()).append(";").append(edge.getName()).append(";").append(edge.getWeight()).append("\n");
-              }
-            }
-
-            graphInfo.setLength(graphInfo.length() - 1);
-
-            buffer.write(graphInfo.toString());
-
-            changes = 0;
-          } catch (IOException ex) {
-            showErrorTab("Error has ocurred, please try again");
+          graphInfo.append("file:").append(imageFile).append("\n");
+          for (Node node : graph.getNodes()) {
+            graphInfo.append(node.getName()).append(";").append(node.getCoordX()).append(";").append(node.getCoordY()).append(";");
           }
+
+          graphInfo.setLength(graphInfo.length() - 1);
+          graphInfo.append("\n");
+
+          for (Node node : graph.getNodes()) {
+            for (Edge<Node> edge : graph.getEdgesFrom(node)) {
+              graphInfo.append(node.getName()).append(";").append(edge.getDestination()).append(";").append(edge.getName()).append(";").append(edge.getWeight()).append("\n");
+            }
+          }
+
+          // Stoppar den byggda strängen i BufferedWriter
+          graphInfo.setLength(graphInfo.length() - 1);
+
+          // Skriver strängen i BufferedWritern till den nyskapade filen
+          buffer.write(graphInfo.toString());
+
+          changes = 0;
+        } catch (IOException ex) {
+          showErrorTab("Error has ocurred, please try again");
         }
-      } else {
-        showErrorTab("No changes to save");
       }
     });
 
@@ -258,7 +288,7 @@ public class Gui extends Application {
       try {
         WritableImage image = viewPane.snapshot(null, null);
         BufferedImage bufferedImage = SwingFXUtils.fromFXImage(image, null);
-        File outputFile = new File("capture.png");
+        File outputFile = new File("../capture.png");
         ImageIO.write(bufferedImage, "png", outputFile);
 
         Alert alert = new Alert(Alert.AlertType.INFORMATION);
@@ -286,6 +316,7 @@ public class Gui extends Application {
       }
     });
 
+    // Får krysset i högra hörnet att fungera likt Exit i menyn
     stage.setOnCloseRequest(e -> {
       if (changes == 1) {
         Alert alert = new Alert(Alert.AlertType.CONFIRMATION, "Unsaved changes, exit anyway?", ButtonType.OK, ButtonType.CANCEL);
@@ -297,6 +328,7 @@ public class Gui extends Application {
         }
       }
     });
+
     //Knappar
     newPlaceButton.setOnAction(e -> {
       newPlaceButton.setDisable(true);
@@ -318,6 +350,7 @@ public class Gui extends Application {
         newPlaceButton.setDisable(false);
         scene.setCursor(Cursor.DEFAULT);
 
+        // Gör så att inget längre händer när man klickar på bilden
         imgView.setOnMouseClicked(null);
       });
     });
@@ -328,6 +361,7 @@ public class Gui extends Application {
         return;
       }
 
+      // Hämtar UserData från cirklarna som innehåller noden i grafen de motsvarar.
       Node a = (Node) selected.get(0).getUserData();
       Node b = (Node) selected.get(1).getUserData();
 
@@ -367,7 +401,6 @@ public class Gui extends Application {
       });
 
       Optional<ConnectionData> result = dialog.showAndWait();
-
       result.ifPresent(connectionData -> {
         try {
           int time = Integer.parseInt(connectionData.time());
@@ -392,16 +425,13 @@ public class Gui extends Application {
         return;
       }
 
+      // Hämtar UserData från cirklarna som innehåller noden i grafen de motsvarar.
       Node a = (Node) selected.get(0).getUserData();
       Node b = (Node) selected.get(1).getUserData();
 
       if (graph.pathExists(a, b)) {
-        boolean foundConnection = false;
-
         for (Edge<Node> edge : graph.getEdgesFrom(a)) {
           if (edge.getDestination().equals(b)) {
-
-            foundConnection = true;
             Dialog<Void> dialog = new Dialog<>();
             dialog.setTitle("Connection");
             dialog.setHeaderText(String.format("Connection from %s to %s", a.getName(), b.getName()));
@@ -418,10 +448,10 @@ public class Gui extends Application {
 
             pane.setPadding(new Insets(10, 80, 10, 80));
 
-            TextField nameField = new TextField(edge.name);
+            TextField nameField = new TextField(edge.getName());
             nameField.setEditable(false);
 
-            TextField timeField = new TextField(String.valueOf(edge.weight));
+            TextField timeField = new TextField(String.valueOf(edge.getWeight()));
             timeField.setEditable(false);
 
             pane.add(new Label("Name:"), 0, 0);
@@ -435,9 +465,7 @@ public class Gui extends Application {
           }
         }
 
-        if (!foundConnection) {
-          showErrorTab("Connection not found");
-        }
+        showErrorTab("Connection not found");
       } else {
         showErrorTab(String.format("There is no connection between %s and %s.", a.getName(), b.getName()));
       }
@@ -449,12 +477,13 @@ public class Gui extends Application {
         return;
       }
 
+      // Hämtar UserData från cirklarna som innehåller noden i grafen de motsvarar.
       Node a = (Node) selected.get(0).getUserData();
       Node b = (Node) selected.get(1).getUserData();
 
       if (graph.pathExists(a, b)) {
         for (Edge<Node> edge : graph.getEdgesFrom(a)) {
-          if (edge.destination.equals(b)) {
+          if (edge.getDestination().equals(b)) {
 
             Dialog<ConnectionData> dialog = new Dialog<>();
             dialog.setTitle("Connection");
@@ -470,7 +499,7 @@ public class Gui extends Application {
 
             pane.setPadding(new Insets(10, 80, 10, 80));
 
-            TextField nameField = new TextField(edge.name);
+            TextField nameField = new TextField(edge.getName());
             nameField.setEditable(false);
 
             TextField timeField = new TextField();
@@ -492,7 +521,7 @@ public class Gui extends Application {
             dialog.showAndWait();
 
             for (Edge<Node> otherEdge : graph.getEdgesFrom(b)) {
-              if (otherEdge.destination.equals(a)) {
+              if (otherEdge.getDestination().equals(a)) {
                 otherEdge.setWeight(Integer.parseInt(timeField.getText()));
               }
             }
@@ -515,6 +544,7 @@ public class Gui extends Application {
       Node b = (Node) selected.get(1).getUserData();
 
       if (graph.getPath(a, b) != null) {
+        // Bygger en sträng med StringBuilder
         StringBuilder sb = new StringBuilder();
 
         Dialog<Void> dialog = new Dialog<>();
@@ -528,10 +558,15 @@ public class Gui extends Application {
         ButtonType okButton = new ButtonType("OK", ButtonData.OK_DONE);
         dialog.getDialogPane().getButtonTypes().add(okButton);
 
+        int totalTime = 0;
         for (Edge<Node> edge : graph.getPath(a, b)) {
-          sb.append(String.format("to %s by %s takes %s", edge.destination, edge.name, edge.weight)).append("\n");
+          sb.append(String.format("to %s by %s takes %s", edge.getDestination(), edge.getName(), edge.getWeight())).append("\n");
+          totalTime += edge.getWeight();
         }
 
+        sb.append(String.format("Total %s", totalTime));
+
+        // Stoppar en byggda strängen i TextArean
         travelInformation.setText(sb.toString());
 
         pane.add(travelInformation, 0 ,0);
@@ -549,16 +584,21 @@ public class Gui extends Application {
 
   private void setMap(Stage stage, Image image, ImageView imgView) {
     imgView.setImage(image);
+
+    // +16, annars passar inte hela bilden
     stage.setMaxWidth(image.getWidth() + 16);
-    stage.setMaxHeight(image.getHeight() + 99);
     stage.setWidth(image.getWidth() + 16);
+
+    // +99, annars passar inte hela bilden
+    stage.setMaxHeight(image.getHeight() + 99);
     stage.setHeight(image.getHeight() + 99);
     imgView.setFitWidth(image.getWidth());
   }
 
+  // Graf, pane osv. stoppas in då metoden inte kan komma åt en graf/pane som skapas i en annan metod (start-metoden)
   private void createLocation(String name, double coordX, double coordY, Graph<Node> graph, ArrayList<Circle> selected, Pane viewPane) {
-    Node loc = new Node(name, coordX, coordY);
-    graph.add(loc);
+    Node place = new Node(name, coordX, coordY);
+    graph.add(place);
 
     Circle location = new Circle();
     location.setCenterX(coordX);
@@ -566,14 +606,19 @@ public class Gui extends Application {
     location.setRadius(10.0f);
     location.setFill(Color.RED);
     location.managedProperty().set(false);
-    location.setUserData(loc);
 
+    // Sätter cirkelns UserData till motsvarande nod i grafen, för att sedan komma åt noden genom cirkeln
+    location.setUserData(place);
+
+    // Label med platsens namn under cirkeln
     Label locationName = new Label(name);
     locationName.setFont(Font.font("Helvetica", FontWeight.BOLD,14));
     locationName.relocate(coordX, coordY + 5);
     viewPane.getChildren().addAll(location, locationName);
 
+    // Sätter beteende för cirklarna
     location.setOnMouseClicked(selectHandler -> {
+      // If-sats som ser till att bara 1-2 cirklar kan väljas
       if (selected.size() <= 2) {
         if (selected.contains(location)) {
           location.setFill(Color.RED);
@@ -586,6 +631,7 @@ public class Gui extends Application {
     });
   }
 
+  // Återanvänder kod från newConnectionButton. Graf och Pane stoppas in då metoden inte kan komma åt en graf/pane som skapas i en annan metod (start-metoden)
   private void createConnection(Node a, Node b, String name, int time, Graph<Node> graph, Pane viewPane) {
     graph.connect(a, b, name, time);
 
@@ -595,6 +641,7 @@ public class Gui extends Application {
     viewPane.getChildren().add(connectionLine);
   }
 
+  // Skapar ett ett Errorfönster med givet errormeddelande
   private void showErrorTab(String message){
     Alert alert = new Alert(Alert.AlertType.ERROR);
     alert.setTitle("ERROR");
@@ -603,10 +650,10 @@ public class Gui extends Application {
     alert.showAndWait();
   }
 
+  // Återställer allt i programmet till startläge, dvs. tomt. Graf, Pane osv. stoppas in då metoden inte kan komma åt en graf/pane som skapas i en annan metod (start-metoden)
   private void clearProgram(Graph<Node> graph, ArrayList<Circle> selected, Pane viewPane, ImageView imgView) {
-    Set<Node> oldNodes = graph.getNodes();
-
-    ArrayList<Node> toRemove = new ArrayList<>(oldNodes);
+    // Skapar ny lista med alla noder i grafen för att undvika att iterera genom ett set som aktivt minskar ändras. Kan annars orsaka error
+    ArrayList<Node> toRemove = new ArrayList<>(graph.getNodes());
 
     for (Node node : toRemove) {
       graph.remove(node);
@@ -614,10 +661,10 @@ public class Gui extends Application {
 
     selected.clear();
     viewPane.getChildren().clear();
+
+    // Stoppar in ImageView igen då den alltid krävs i vårt Pane
     viewPane.getChildren().add(imgView);
   }
-
-  //Mainmetod
 
   public static void main(String[] args) {
     launch(args);
