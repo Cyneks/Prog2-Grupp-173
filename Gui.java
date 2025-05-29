@@ -55,9 +55,10 @@ import javafx.stage.Stage;
 import javax.imageio.ImageIO;
 
 public class Gui extends Application {
+  // Sträng med path till bildfilen så att den kan användas i andra lambdauttryck
   private String imageFile;
 
-  //Om changes = 0, inga ändringar har skett som måste sparas. Om changes = 1, ändrignar har skett som bör sparas.
+  // Om changes = 0, inga ändringar har skett som måste sparas. Om changes = 1, ändrignar har skett som bör sparas.
   private int changes = 0;
 
   private record ConnectionData(String name, String time) {}
@@ -367,7 +368,6 @@ public class Gui extends Application {
       });
 
       Optional<ConnectionData> result = dialog.showAndWait();
-
       result.ifPresent(connectionData -> {
         try {
           int time = Integer.parseInt(connectionData.time());
@@ -396,12 +396,8 @@ public class Gui extends Application {
       Node b = (Node) selected.get(1).getUserData();
 
       if (graph.pathExists(a, b)) {
-        boolean foundConnection = false;
-
         for (Edge<Node> edge : graph.getEdgesFrom(a)) {
           if (edge.getDestination().equals(b)) {
-
-            foundConnection = true;
             Dialog<Void> dialog = new Dialog<>();
             dialog.setTitle("Connection");
             dialog.setHeaderText(String.format("Connection from %s to %s", a.getName(), b.getName()));
@@ -418,10 +414,10 @@ public class Gui extends Application {
 
             pane.setPadding(new Insets(10, 80, 10, 80));
 
-            TextField nameField = new TextField(edge.name);
+            TextField nameField = new TextField(edge.getName());
             nameField.setEditable(false);
 
-            TextField timeField = new TextField(String.valueOf(edge.weight));
+            TextField timeField = new TextField(String.valueOf(edge.getWeight()));
             timeField.setEditable(false);
 
             pane.add(new Label("Name:"), 0, 0);
@@ -435,9 +431,7 @@ public class Gui extends Application {
           }
         }
 
-        if (!foundConnection) {
-          showErrorTab("Connection not found");
-        }
+        showErrorTab("Connection not found");
       } else {
         showErrorTab(String.format("There is no connection between %s and %s.", a.getName(), b.getName()));
       }
@@ -454,7 +448,7 @@ public class Gui extends Application {
 
       if (graph.pathExists(a, b)) {
         for (Edge<Node> edge : graph.getEdgesFrom(a)) {
-          if (edge.destination.equals(b)) {
+          if (edge.getDestination().equals(b)) {
 
             Dialog<ConnectionData> dialog = new Dialog<>();
             dialog.setTitle("Connection");
@@ -470,7 +464,7 @@ public class Gui extends Application {
 
             pane.setPadding(new Insets(10, 80, 10, 80));
 
-            TextField nameField = new TextField(edge.name);
+            TextField nameField = new TextField(edge.getName());
             nameField.setEditable(false);
 
             TextField timeField = new TextField();
@@ -492,7 +486,7 @@ public class Gui extends Application {
             dialog.showAndWait();
 
             for (Edge<Node> otherEdge : graph.getEdgesFrom(b)) {
-              if (otherEdge.destination.equals(a)) {
+              if (otherEdge.getDestination().equals(a)) {
                 otherEdge.setWeight(Integer.parseInt(timeField.getText()));
               }
             }
@@ -528,9 +522,13 @@ public class Gui extends Application {
         ButtonType okButton = new ButtonType("OK", ButtonData.OK_DONE);
         dialog.getDialogPane().getButtonTypes().add(okButton);
 
+        int totalTime = 0;
         for (Edge<Node> edge : graph.getPath(a, b)) {
-          sb.append(String.format("to %s by %s takes %s", edge.destination, edge.name, edge.weight)).append("\n");
+          sb.append(String.format("to %s by %s takes %s", edge.getDestination(), edge.getName(), edge.getWeight())).append("\n");
+          totalTime += edge.getWeight();
         }
+
+        sb.append(String.format("Total %s",totalTime));
 
         travelInformation.setText(sb.toString());
 
