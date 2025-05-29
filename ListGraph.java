@@ -1,3 +1,4 @@
+package se.su.inlupp;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -15,6 +16,7 @@ public class ListGraph<T> implements Graph<T> {
     nodes.putIfAbsent(node, new HashSet<>());
   }
 
+//Skapar dubbelriktad kant mellan nod1, nod2
   public void connect(T node1, T node2, String name, int weight) {
     if (!nodes.containsKey(node1) || !nodes.containsKey(node2)) {
       throw new NoSuchElementException();
@@ -99,11 +101,12 @@ public class ListGraph<T> implements Graph<T> {
     nodes.remove(node);
   }
 
+  //rekursiv DFS
   public boolean pathExists(T from, T to) {
     if (!nodes.containsKey(from) || !nodes.containsKey(to)) {
       return false;
     }
-
+//skapar karta med vilka noder man kan nå från start
     Map<T, T> connection = new HashMap<>();
     recursiveConnect(from, null, connection);
 
@@ -114,6 +117,7 @@ public class ListGraph<T> implements Graph<T> {
     return false;
   }
 
+  //rekursiv DFS
   private void recursiveConnect(T to, T from, Map<T, T> connection) {
     connection.put(to, from);
 
@@ -132,7 +136,7 @@ public class ListGraph<T> implements Graph<T> {
 
     Map<T, T> connection = new HashMap<>();
     recursiveConnect(from, null, connection);
-
+//sparar vägen baklänges i en lista och bygger den i rätt ordning med addFirst
     List<Edge<T>> path = new LinkedList<>();
     T current = to;
     while (current != null && !current.equals(from)) {
@@ -163,6 +167,7 @@ public class ListGraph<T> implements Graph<T> {
     }
     
     dist.put(from, 0.0);
+    //hitta noden u med lägst dist, uppdatera grannars dist, prev om kortare väg hittas, när vi når målet "to" bygger vi vägen baklänges med "prev"
 
     while(!q.isEmpty()) {
       T u = null;
